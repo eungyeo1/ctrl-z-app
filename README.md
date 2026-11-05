@@ -1,56 +1,44 @@
-# Welcome to your Expo app 👋
+# Ctrl+Z — 프론트엔드
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+SOLUX 26-2 Ctrl+Z 팀의 앱 프로젝트입니다. (Expo + React Native + TypeScript + Expo Router)
 
-## Get started
+## 실행 방법
 
-1. Install dependencies
+1. 레포 받기
+
+   ```bash
+   git clone https://github.com/eungyeo1/ctrl-z-app.git
+   cd ctrl-z-app
+   ```
+
+2. 패키지 설치
 
    ```bash
    npm install
    ```
 
-2. Start the app
+3. 개발 서버 실행
 
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+4. 휴대폰에 **Expo Go** 앱(최신 버전)을 설치하고 터미널의 QR 코드를 스캔합니다.
+   - 폰에서 안 열리면(학교 와이파이 등) 터널 모드로 실행하세요.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+     ```bash
+     npx expo start --tunnel ngrok
+     ```
 
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+   - 터미널에서 `w` 를 누르면 웹 브라우저로도 볼 수 있습니다.
 
-## Get a fresh project
+## 폴더 구조
 
-When you're ready, run:
+[`src/README.md`](src/README.md) 를 참고해 주세요.
 
-```bash
-npm run reset-project
-```
+## 팀 규칙
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
-
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- 패키지 매니저는 **npm** 으로 통일합니다.
+- 라이브러리는 `npx expo install <패키지>` 로 설치합니다. (SDK 버전에 맞는 버전으로 설치됨)
+- 색상·간격·글자 크기는 `@/theme` 의 디자인 토큰을 사용합니다.
+- 커밋 전에 `npm run lint` 로 코드 검사를 해 주세요.
