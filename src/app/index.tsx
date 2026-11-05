@@ -20,7 +20,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   title: {
-    ...typography.displayBold,
+    ...typography.largeBold,
     color: colors.primary,
   },
   caption: {

@@ -5,6 +5,7 @@ import * as SplashScreen from "expo-splash-screen";
 // 굵기별 경로로 가져와야 쓰는 굵기만 앱에 포함됩니다.
 import { Hahmlet_300Light } from "@expo-google-fonts/hahmlet/300Light";
 import { Hahmlet_400Regular } from "@expo-google-fonts/hahmlet/400Regular";
+import { Hahmlet_600SemiBold } from "@expo-google-fonts/hahmlet/600SemiBold";
 import { Hahmlet_700Bold } from "@expo-google-fonts/hahmlet/700Bold";
 
 import { fontFamily } from "@/theme";
@@ -19,6 +20,7 @@ export default function RootLayout() {
     [fontFamily.pretendardBold]: require("@/assets/fonts/Pretendard-Bold.otf"),
     [fontFamily.hahmletLight]: Hahmlet_300Light,
     [fontFamily.hahmletRegular]: Hahmlet_400Regular,
+    [fontFamily.hahmletSemiBold]: Hahmlet_600SemiBold,
     [fontFamily.hahmletBold]: Hahmlet_700Bold,
   });
 
