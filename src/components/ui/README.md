@@ -3,7 +3,7 @@
 이 폴더의 컴포넌트는 여러 화면에서 반복해서 쓰는 기본 UI입니다. 색상·간격·글자 스타일은 `@/theme` 토큰을 사용합니다.
 
 ```tsx
-import { Button, Card, TextField } from "@/components/ui";
+import { Button, Card, Dropdown, TextField } from "@/components/ui";
 ```
 
 ## Button
@@ -78,6 +78,36 @@ import { Button, Card, TextField } from "@/components/ui";
 | `inputStyle` | `StyleProp<TextStyle>` | 없음 | 입력창 스타일 추가 |
 
 그림자 위치는 `shadowPosition`으로 선택합니다. `onFocus`·`onBlur`는 React Native `TextInput`에 그대로 전달됩니다. 그 외 `value`, `onChangeText`, `keyboardType`, `secureTextEntry` 등 `TextInput` props를 사용할 수 있습니다.
+
+## Dropdown
+
+`Dropdown`은 옵션 중 하나를 선택하는 공통 선택 필드입니다. 현재 값은 표시만 하고 직접 입력하지 않습니다. 옵션을 누르면 선택값을 전달하고 목록을 닫습니다.
+
+```tsx
+const [chapter, setChapter] = useState("chapter-1");
+
+<Dropdown
+  label="챕터"
+  value={chapter}
+  onValueChange={setChapter}
+  options={[
+    { label: "1장 «구출대»", value: "chapter-1" },
+    { label: "2장 «새로운 만남»", value: "chapter-2" },
+  ]}
+/>
+```
+
+| prop | 타입 | 기본값 | 설명 |
+| --- | --- | --- | --- |
+| `options` | `{ label: string; value: string }[]` | 필수 | 선택할 항목 목록 |
+| `value` | `string` | 없음 | 현재 선택값 |
+| `onValueChange` | `(value: string) => void` | 필수 | 선택 시 호출 |
+| `label` | `string` | 없음 | 필드와 선택 목록의 제목 |
+| `placeholder` | `string` | `선택해 주세요` | 선택 전 표시 문구 |
+| `disabled` | `boolean` | `false` | 필드 비활성화 |
+| `shadowPosition` | `top`, `bottom`, `none` | `bottom` | 그림자 방향 |
+| `containerStyle` | `StyleProp<ViewStyle>` | 없음 | 라벨과 필드 영역 스타일 |
+| `style` | `StyleProp<ViewStyle>` | 없음 | 필드 스타일 추가 |
 
 ## Card
 
