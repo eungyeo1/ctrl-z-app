@@ -1,12 +1,14 @@
 import { useRouter } from "expo-router";
-import { View, Text, Button, StyleSheet } from "react-native";
+import { Text, View, Button, StyleSheet } from "react-native";
+
+import { colors, spacing, typography } from "@/theme";
 
 export default function Home() {
   const router = useRouter();
-
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>홈 화면</Text>
+      <Text style={styles.title}>오두막 책방</Text>
+      <Text style={styles.caption}>디자인 토큰 적용 확인용 화면</Text>
       <Button
         title="독서방 상세 보기"
         onPress={() =>
@@ -25,10 +27,15 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    gap: 16,
+    gap: spacing.sm,
+    backgroundColor: colors.background,
   },
   title: {
-    fontSize: 22,
-    fontWeight: "bold",
+    ...typography.largeBold,
+    color: colors.primary,
+  },
+  caption: {
+    ...typography.smallRegular,
+    color: colors.textSecondary,
   },
 });
