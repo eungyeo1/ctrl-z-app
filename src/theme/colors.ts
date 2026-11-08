@@ -13,6 +13,8 @@ export const palette = {
   neutral50: "#7F7F7F",
   neutral10: "#1A1A1A",
 
+  textBackground: "#ECEBE3",
+
   // ⚠️ 피그마에 아직 없는 색 (임시). 디자인에서 정해지면 교체해 주세요.
   red: "#E5484D",
 } as const;
@@ -26,7 +28,8 @@ export const colors = {
 
   // 배경
   background: palette.primaryCream, // 화면 기본 배경
-  surface: palette.neutral100, // 카드, 입력창 등 흰 영역
+  surface: palette.neutral100, // 카드 흰 영역
+  textBackground: palette.textBackground, // 입력창 영역
 
   // 글자
   textPrimary: palette.neutral10, // 기본 글자
