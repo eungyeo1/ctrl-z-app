@@ -1,6 +1,5 @@
-import { Text, View, StyleSheet } from "react-native";
-
 import { colors, spacing, typography } from "@/theme";
+import { StyleSheet, Text, View } from "react-native";
 
 export default function Index() {
   return (
