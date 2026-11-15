@@ -1,5 +1,12 @@
-import { Card, Dropdown, TextField, Toggle } from "@/components/ui";
-import { colors, radius, typography } from "@/theme";
+import {
+  Button,
+  Card,
+  Dropdown,
+  SegmentedControl,
+  TextField,
+  Toggle,
+} from "@/components/ui";
+import { colors, palette, radius, typography } from "@/theme";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -26,6 +33,8 @@ export default function RoomCreate() {
   const [duration, setDuration] = useState("");
   const [rules, setRules] = useState("");
   const [isPublic, setIsPublic] = useState(true);
+
+  const [isUsingAutoPicture, setIsUsingAutoPicture] = useState("photo");
 
   const handleCreateRoom = () => {
     if (!roomName.trim() || !memberLimit || !duration.trim()) {
@@ -57,10 +66,7 @@ export default function RoomCreate() {
       <View style={styles.content}>
         <Text style={styles.title}>독서방 만들기</Text>
         <View>
-          <Card
-            style={{ backgroundColor: colors.textBackground }}
-            contentStyle={styles.bookCard}
-          >
+          <Card style={styles.card} contentStyle={styles.bookCard}>
             <Image
               accessibilityLabel="개설할 책 표지"
               source={{ uri: "https://placehold.co/75x114.png" }}
@@ -114,33 +120,67 @@ export default function RoomCreate() {
           </View>
         </View>
 
-        <View>
-          <Card
-            style={[
-              { backgroundColor: colors.textBackground },
-              { borderRadius: radius.full },
-            ]}
-            contentStyle={styles.bookCard}
-          >
-            <View style={{ flex: 1 }}>
-              <Text style={styles.title}>공개 독서방</Text>
-              <Text style={styles.explanation}>
-                {isPublic
-                  ? "누구나 독서방을 찾고 참여할 수 있어요"
-                  : "끄면 비밀번호로만 참여할 수 있어요"}
-              </Text>
-            </View>
-            <Toggle
-              value={isPublic}
-              onValueChange={setIsPublic}
-              accessibilityLabel="공개 독서방"
-            />
-          </Card>
-        </View>
+        <Card
+          style={[
+            { backgroundColor: colors.textBackground },
+            { borderRadius: radius.full },
+          ]}
+          contentStyle={styles.bookCard}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>공개 독서방</Text>
+            <Text style={styles.explanation}>
+              {isPublic
+                ? "누구나 독서방을 찾고 참여할 수 있어요"
+                : "끄면 비밀번호로만 참여할 수 있어요"}
+            </Text>
+          </View>
+          <Toggle
+            value={isPublic}
+            onValueChange={setIsPublic}
+            accessibilityLabel="공개 독서방"
+          />
+        </Card>
 
         <View style={styles.textField}>
-          <TextField label="규칙" multiline />
+          <TextField
+            label="규칙"
+            multiline
+            accessibilityLabel="독서방 규칙"
+            value={rules}
+            onChangeText={setRules}
+            textAlignVertical="top"
+          />
         </View>
+        <View
+          style={{
+            height: 1, // 또는 StyleSheet.hairlineWidth (가장 얇은 선)
+            backgroundColor: palette.neutral70, // 선 색상
+          }}
+        />
+        <Text style={styles.label}>목차 · 챕터 등록 *</Text>
+        <SegmentedControl
+          accessibilityLabel="목차 입력 방식"
+          options={[
+            { label: "사진으로 자동 인식", value: "photo" },
+            { label: "직접 입력", value: "manual" },
+          ]}
+          value={isUsingAutoPicture}
+          onValueChange={setIsUsingAutoPicture}
+        />
+        <Card
+          style={[styles.card, styles.cameraBox]}
+          contentStyle={styles.cameraContent}
+        >
+          <Text>아이콘</Text>
+          <Text style={styles.cameraBoxText}>
+            {"목차 페이지를 촬영하면\n AI가 챕터 목록을 정리해드려요"}
+          </Text>
+          <Button variant="secondary">사진 촬영 · 업로드</Button>
+        </Card>
+        <Button accessibilityLabel="독서방 만들기" onPress={handleCreateRoom}>
+          독서방 만들기
+        </Button>
       </View>
     </ScrollView>
   );
@@ -174,7 +214,7 @@ const styles = StyleSheet.create({
   },
   title: { ...typography.baseBold },
   explanation: { ...typography.uiSmallRegular, color: colors.textSecondary },
-  label: { ...typography.uiSmallRegular, color: colors.textPrimary },
+  label: { ...typography.uiBaseSemiBold, color: colors.textSecondary },
   textField: { gap: 16 },
   toggle: {
     width: 48,
@@ -200,5 +240,23 @@ const styles = StyleSheet.create({
   },
   toggleTumboff: {
     alignSelf: "flex-start",
+  },
+  card: {
+    backgroundColor: colors.textBackground,
+  },
+  cameraBox: {
+    width: 340,
+    height: 153,
+  },
+  cameraContent: {
+    flexDirection: "column",
+    alignItems: "center",
+  },
+  cameraBoxText: {
+    width: 150,
+    height: 50,
+    textAlign: "center",
+    color: colors.textSecondary,
+    ...typography.uiSmallRegular,
   },
 });
