@@ -17,7 +17,10 @@ export type ButtonVariant = "primary" | "secondary" | "tertiary";
 export type ButtonSize = "small" | "medium" | "large";
 
 // Pressable의 기본 이벤트 props에 디자인 옵션을 더합니다.
-export interface ButtonProps extends Omit<PressableProps, "children" | "style"> {
+export interface ButtonProps extends Omit<
+  PressableProps,
+  "children" | "style"
+> {
   children: ReactNode;
   variant?: ButtonVariant;
   size?: ButtonSize;
@@ -113,7 +116,7 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
   },
   variant_secondary: {
-    backgroundColor: colors.surface,
+    backgroundColor: "transparent",
     borderColor: colors.primary,
   },
   variant_tertiary: {
