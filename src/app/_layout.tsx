@@ -85,7 +85,7 @@ function RootNavigator() {
         <Stack.Screen name="books/[bookId]/rooms" options={{ title: "" }} />
         <Stack.Screen name="books/request" options={{ title: "" }} />
         <Stack.Screen name="books/request-result" options={{ title: "" }} />
-        <Stack.Screen name="rooms/[roomId]" options={{ title: "" }} />
+        <Stack.Screen name="rooms/[roomId]/preview" options={{ title: "" }} />
         <Stack.Screen name="archive/index" options={{ title: "" }} />
         <Stack.Screen name="archive/[roomId]" options={{ title: "" }} />
         <Stack.Screen name="notifications" options={{ title: "" }} />

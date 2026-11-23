@@ -13,6 +13,7 @@ import type {
   UserStats,
   WaitlistEntry,
 } from "@/types/models";
+import { roomHomeHref, roomPreviewHref } from "@/features/rooms/routes";
 
 // 목업 날짜를 "지금" 기준으로 만듭니다.
 const HOUR = 60 * 60 * 1000;
@@ -367,7 +368,7 @@ export const mockNotifications: AppNotification[] = [
     body: "'퇴근 후 30분 독서'에 우선 참여할 수 있어요. 20시간 안에 참여해 주세요.",
     createdAt: hoursAgo(1),
     read: false,
-    link: { pathname: "/rooms/[roomId]", params: { roomId: "r7" } },
+    link: roomPreviewHref("r7"),
   },
   {
     id: "n2",
@@ -376,7 +377,7 @@ export const mockNotifications: AppNotification[] = [
     body: "'한아뿐 같이 읽어요'에 새 메모가 올라왔어요.",
     createdAt: hoursAgo(3),
     read: false,
-    link: { pathname: "/rooms/[roomId]", params: { roomId: "r4" } },
+    link: roomHomeHref("r4"),
   },
   {
     id: "n3",
@@ -394,7 +395,7 @@ export const mockNotifications: AppNotification[] = [
     body: "지현님이 내 메모에 댓글을 남겼어요.",
     createdAt: hoursAgo(50),
     read: true,
-    link: { pathname: "/rooms/[roomId]", params: { roomId: "r4" } },
+    link: roomHomeHref("r4"),
   },
   {
     id: "n5",
@@ -403,7 +404,7 @@ export const mockNotifications: AppNotification[] = [
     body: "'사탄탱고 완독 챌린지'가 곧 끝나요.",
     createdAt: hoursAgo(75),
     read: true,
-    link: { pathname: "/rooms/[roomId]", params: { roomId: "r5" } },
+    link: roomHomeHref("r5"),
   },
   {
     id: "n6",

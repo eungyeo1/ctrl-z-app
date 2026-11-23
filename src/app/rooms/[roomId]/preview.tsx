@@ -1,4 +1,5 @@
 // S-11 독서방 상세 / 참여: 소개·참여자 수·규칙 미리보기 후 참여 (S-11-1)
+// 주소: rooms/[roomId]/preview (참여 전 화면). 참여 후 방 안은 rooms/[roomId] = FE2 독서방 홈(S-13)
 // ⚠️ 피그마에 이 화면 시안이 없어서, 독서방 목록 카드(지붕 카드)와 책 정보 화면 스타일을 따라 만들었습니다.
 // ⚠️ 참여 후 들어가는 "독서방 홈(S-13)"은 FE2 담당이라, 지금은 참여 완료 안내까지만 처리합니다.
 // 참여 버튼 분기:
@@ -69,7 +70,7 @@ export default function RoomDetail() {
       detail.reload();
       return;
     }
-    // TODO: FE2 독서방 홈(S-13) 주소가 정해지면 참여 후 그 화면으로 이동
+    // TODO: FE2 독서방 홈이 합쳐지면 아래 안내 대신 router.replace(roomHomeHref(room.id)) 로 방 안으로 이동
     notify("독서방에 참여했어요!", "독서방 홈 화면은 FE2 작업이 합쳐지면 연결돼요.");
     detail.reload();
   };

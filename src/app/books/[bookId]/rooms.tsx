@@ -7,6 +7,7 @@ import { Screen } from "@/components/layout/Screen";
 import { StateView } from "@/components/layout/StateView";
 import { SegmentedTabs } from "@/components/ui/SegmentedTabs";
 import { RoomListItem } from "@/features/rooms/RoomListItem";
+import { roomPreviewHref } from "@/features/rooms/routes";
 import { useApi } from "@/hooks/useApi";
 import { getBook } from "@/services/api/books";
 import { getRoomsByBook } from "@/services/api/rooms";
@@ -67,7 +68,7 @@ export default function BookRooms() {
             <RoomListItem
               key={room.id}
               room={room}
-              onPress={() => router.push({ pathname: "/rooms/[roomId]", params: { roomId: room.id } })}
+              onPress={() => router.push(roomPreviewHref(room.id))}
             />
           ))}
         </View>

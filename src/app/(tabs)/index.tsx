@@ -15,6 +15,7 @@ import { BookCover } from "@/features/books/BookCover";
 import { SearchBar } from "@/features/books/SearchBar";
 import { MyRoomCard } from "@/features/rooms/MyRoomCard";
 import { RoomListItem } from "@/features/rooms/RoomListItem";
+import { roomHomeHref, roomPreviewHref } from "@/features/rooms/routes";
 import { useApi } from "@/hooks/useApi";
 import { getRecommendedBooks } from "@/services/api/books";
 import { getMyRooms, getRecommendedRooms } from "@/services/api/rooms";
@@ -42,7 +43,6 @@ export default function Home() {
     }, [reloadMyRooms, reloadRooms]),
   );
 
-  const openRoom = (roomId: string) => router.push({ pathname: "/rooms/[roomId]", params: { roomId } });
   const nickname = user?.nickname;
 
   return (
@@ -85,7 +85,7 @@ export default function Home() {
         ) : myRooms.data?.length ? (
           myRooms.data
             .slice(0, showAllRooms ? undefined : MY_ROOM_PREVIEW)
-            .map((item) => <MyRoomCard key={item.room.id} item={item} onPress={() => openRoom(item.room.id)} />)
+            .map((item) => <MyRoomCard key={item.room.id} item={item} onPress={() => router.push(roomHomeHref(item.room.id))} />)
         ) : (
           <StateView emptyMessage="아직 참여 중인 독서방이 없어요." />
         )}
@@ -123,7 +123,7 @@ export default function Home() {
           <StateView loading />
         ) : rooms.data?.length ? (
           rooms.data.map(({ room, book }) => (
-            <RoomListItem key={room.id} room={room} book={book} onPress={() => openRoom(room.id)} />
+            <RoomListItem key={room.id} room={room} book={book} onPress={() => router.push(roomPreviewHref(room.id))} />
           ))
         ) : (
           <StateView emptyMessage="모집 중인 독서방이 없어요." />
