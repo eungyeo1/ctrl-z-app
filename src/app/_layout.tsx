@@ -8,7 +8,8 @@ import { Hahmlet_400Regular } from "@expo-google-fonts/hahmlet/400Regular";
 import { Hahmlet_600SemiBold } from "@expo-google-fonts/hahmlet/600SemiBold";
 import { Hahmlet_700Bold } from "@expo-google-fonts/hahmlet/700Bold";
 
-import { fontFamily } from "@/theme";
+import { AuthProvider } from "@/features/auth/AuthContext";
+import { colors, fontFamily, typography } from "@/theme";
 
 // 폰트를 다 불러올 때까지 스플래시 화면을 유지합니다.
 SplashScreen.preventAutoHideAsync();
@@ -36,11 +37,27 @@ export default function RootLayout() {
   }
 
   return (
-    <Stack>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="(auth)/login" options={{ title: "로그인" }} />
-      <Stack.Screen name="books/[bookId]" options={{ title: "책 상세" }} />
-      <Stack.Screen name="rooms/[roomId]" options={{ title: "독서방 상세" }} />
-    </Stack>
+    <AuthProvider>
+      <Stack
+        screenOptions={{
+          headerTintColor: colors.primary,
+          headerTitleStyle: {
+            fontFamily: typography.uiBaseSemiBold.fontFamily,
+            fontSize: 16,
+            color: colors.textPrimary,
+          },
+          headerStyle: { backgroundColor: colors.background },
+          headerShadowVisible: false,
+          headerBackButtonDisplayMode: "minimal",
+          contentStyle: { backgroundColor: colors.background },
+        }}
+      >
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)/login" options={{ headerShown: false, presentation: "modal" }} />
+        <Stack.Screen name="books/[bookId]/index" options={{ title: "책 정보" }} />
+        <Stack.Screen name="books/[bookId]/rooms" options={{ title: "" }} />
+        <Stack.Screen name="rooms/[roomId]" options={{ title: "" }} />
+      </Stack>
+    </AuthProvider>
   );
 }

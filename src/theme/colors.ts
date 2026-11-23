@@ -17,6 +17,12 @@ export const palette = {
 
   // ⚠️ 피그마에 아직 없는 색 (임시). 디자인에서 정해지면 교체해 주세요.
   red: "#E5484D",
+  green: "#4C9A6A", // 상태 "읽는 중" 점
+  greenSoft: "#E3F1E7", // 상태 "읽는 중" 배경
+  // 피그마 시안의 참여자 아바타 색 (임시)
+  avatarPink: "#D9A7B0",
+  avatarBeige: "#E8D9B5",
+  avatarBlue: "#A9C6D6",
 } as const;
 
 // 화면에서는 아래 "용도 이름"을 사용합니다.
@@ -43,6 +49,8 @@ export const colors = {
   // 상태
   disabled: palette.neutral90, // 비활성 버튼 배경
   error: palette.red, // ⚠️ 임시
+  success: palette.green, // ⚠️ 임시
+  successBackground: palette.greenSoft, // ⚠️ 임시
 } as const;
 
 export type ColorName = keyof typeof colors;

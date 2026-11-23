@@ -36,6 +36,9 @@ const size = {
 // 피그마 텍스트 스타일 이름과 1:1 대응 (예: large/bold → largeBold)
 export const typography = {
   // Pretendard is used for interface copy; Hahmlet remains available for editorial text.
+  // 화면 제목·카드 제목처럼 큰 산세리프 글씨 (피그마 홈/검색/책 정보 화면 기준)
+  uiTitleBold: { fontSize: 22, lineHeight: 30, fontFamily: fontFamily.pretendardBold },
+  uiHeadlineBold: { fontSize: 16, lineHeight: 22, fontFamily: fontFamily.pretendardBold },
   uiBaseRegular: { ...size.small, fontFamily: fontFamily.pretendardRegular },
   uiBaseSemiBold: { ...size.small, fontFamily: fontFamily.pretendardSemiBold },
   uiSmallRegular: { ...size.xsmall, fontFamily: fontFamily.pretendardRegular },
