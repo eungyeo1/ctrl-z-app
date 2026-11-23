@@ -35,6 +35,11 @@ const size = {
 
 // 피그마 텍스트 스타일 이름과 1:1 대응 (예: large/bold → largeBold)
 export const typography = {
+  // Pretendard is used for interface copy; Hahmlet remains available for editorial text.
+  uiBaseRegular: { ...size.small, fontFamily: fontFamily.pretendardRegular },
+  uiBaseSemiBold: { ...size.small, fontFamily: fontFamily.pretendardSemiBold },
+  uiSmallRegular: { ...size.xsmall, fontFamily: fontFamily.pretendardRegular },
+  uiSmallSemiBold: { ...size.xsmall, fontFamily: fontFamily.pretendardSemiBold },
   largeRegular: { ...size.large, fontFamily: fontFamily.hahmletRegular },
   largeBold: { ...size.large, fontFamily: fontFamily.hahmletBold },
   baseRegular: { ...size.base, fontFamily: fontFamily.hahmletRegular },
