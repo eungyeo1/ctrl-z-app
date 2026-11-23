@@ -63,28 +63,33 @@ const sortOptions = [
   { label: "챕터순", value: "chapter" },
 ];
 
-function MemoText({ memo, avatarColor, onReport, reported }: {
+function MemoText({ memo, avatarColor, onReport, onToggleReportMenu, reportMenuOpen, reported }: {
   memo: RelatedMemo;
   avatarColor: string;
   onReport?: () => void;
+  onToggleReportMenu?: () => void;
+  reportMenuOpen?: boolean;
   reported?: boolean;
 }) {
   return (
-    <>
+    <View style={[styles.memoContents, reportMenuOpen && styles.openMemoContents]}>
       <View style={styles.byline}>
         <View style={[styles.avatar, { backgroundColor: avatarColor }]} />
         <View style={styles.authorText}>
           <Text style={styles.body}>{memo.author}</Text>
           <Text style={styles.location}>{memo.location}</Text>
         </View>
-        {onReport && (
+        {onToggleReportMenu && (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`${memo.author} 님의 메모 신고하기`}
-            onPress={onReport}
+            accessibilityLabel={`${memo.author} 님의 메모 옵션`}
+            accessibilityState={{ expanded: !!reportMenuOpen }}
+            onPress={onToggleReportMenu}
             style={styles.reportButton}
           >
-            <View style={styles.chevron} />
+            <View style={styles.menuDot} />
+            <View style={styles.menuDot} />
+            <View style={styles.menuDot} />
           </Pressable>
         )}
       </View>
@@ -98,7 +103,12 @@ function MemoText({ memo, avatarColor, onReport, reported }: {
         </View>
       )}
       <Text style={styles.body}>{memo.body}</Text>
-    </>
+      {reportMenuOpen && (
+        <Pressable accessibilityRole="button" onPress={onReport} style={styles.reportMenu}>
+          <Text style={styles.reportMenuLabel}>신고하기</Text>
+        </Pressable>
+      )}
+    </View>
   );
 }
 
@@ -111,6 +121,7 @@ export function MemoFeed() {
   const [revealTarget, setRevealTarget] = useState<Memo | null>(null);
   const [writing, setWriting] = useState(false);
   const [reportTarget, setReportTarget] = useState<string>();
+  const [reportMenuTarget, setReportMenuTarget] = useState<string>();
   const [reports, setReports] = useState<Record<string, MemoReportDraft>>({});
   const feedScroll = useRef<ComponentRef<typeof ScrollView>>(null);
   const sortedMemos = [...memos].sort((a, b) => {
@@ -139,10 +150,25 @@ export function MemoFeed() {
     setReportTarget(undefined);
   }
 
+  function reportActions(target: string, canReport = true) {
+    const reported = !!reports[target];
+    if (!canReport || reported) return { reported };
+
+    return {
+      reportMenuOpen: reportMenuTarget === target,
+      onToggleReportMenu: () => setReportMenuTarget((current) => current === target ? undefined : target),
+      onReport: () => {
+        setReportMenuTarget(undefined);
+        setReportTarget(target);
+      },
+    };
+  }
+
   return (
     <View style={styles.feed}>
       <ScrollView
         ref={feedScroll}
+        onScrollBeginDrag={() => setReportMenuTarget(undefined)}
         contentContainerStyle={styles.scroll}
         style={detail ? styles.hidden : undefined}
       >
@@ -151,7 +177,10 @@ export function MemoFeed() {
           <Dropdown
             options={sortOptions}
             value={sort}
-            onValueChange={setSort}
+            onValueChange={(value) => {
+              setReportMenuTarget(undefined);
+              setSort(value);
+            }}
             shadowPosition="none"
             style={styles.sort}
             containerStyle={styles.sortContainer}
@@ -197,12 +226,14 @@ export function MemoFeed() {
                 <MemoText
                   memo={memo}
                   avatarColor={memo.id === 1 ? colors.memoAvatarBlue : colors.memoAvatarSand}
-                  onReport={memo.author !== "나" && !reports[`memo:${memo.id}`] ? () => setReportTarget(`memo:${memo.id}`) : undefined}
-                  reported={!!reports[`memo:${memo.id}`]}
+                  {...reportActions(`memo:${memo.id}`, memo.author !== "나")}
                 />
                 {memo.spoiler && <Text style={styles.location}>스포일러가 포함된 메모</Text>}
                 {memo.related.length > 0 && (
-                  <Pressable accessibilityRole="button" style={styles.related} onPress={() => setDetail(memo)}>
+                  <Pressable accessibilityRole="button" style={styles.related} onPress={() => {
+                    setReportMenuTarget(undefined);
+                    setDetail(memo);
+                  }}>
                     <View style={styles.relatedAvatars}>
                       <View style={[styles.avatar, styles.roseAvatar]} />
                       <View style={[styles.avatar, styles.sandAvatar, styles.overlap]} />
@@ -217,10 +248,16 @@ export function MemoFeed() {
         )}
       </ScrollView>
       {detail && (
-        <ScrollView contentContainerStyle={[styles.scroll, styles.clusterScroll]}>
+        <ScrollView
+          contentContainerStyle={[styles.scroll, styles.clusterScroll]}
+          onScrollBeginDrag={() => setReportMenuTarget(undefined)}
+        >
           <View style={styles.heading}>
             <Text style={styles.title}>메모 피드</Text>
-            <Pressable accessibilityRole="button" onPress={() => setDetail(null)} style={styles.backToFeed}>
+            <Pressable accessibilityRole="button" onPress={() => {
+              setReportMenuTarget(undefined);
+              setDetail(null);
+            }} style={styles.backToFeed}>
               <Text style={styles.actionText}>목록으로</Text>
             </Pressable>
           </View>
@@ -240,8 +277,7 @@ export function MemoFeed() {
                 <MemoText
                   memo={memo}
                   avatarColor={index === 0 ? colors.memoAvatarRose : colors.memoAvatarSand}
-                  onReport={reports[target] ? undefined : () => setReportTarget(target)}
-                  reported={!!reports[target]}
+                  {...reportActions(target)}
                 />
               </View>
             );
@@ -324,7 +360,16 @@ const styles = StyleSheet.create({
     transform: [{ rotate: "30deg" }],
   },
   byline: { flexDirection: "row", alignItems: "center", gap: 8 },
-  reportButton: { width: 44, minHeight: 44, marginRight: -10, alignItems: "center", justifyContent: "center" },
+  memoContents: { gap: 18 },
+  openMemoContents: { zIndex: 1, minHeight: 84 },
+  reportButton: { width: 44, minHeight: 44, marginRight: -10, alignItems: "center", justifyContent: "center", gap: 3 },
+  menuDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: colors.textPrimary },
+  reportMenu: {
+    position: "absolute", top: 40, right: 0, minHeight: 44, paddingHorizontal: 16,
+    justifyContent: "center", backgroundColor: colors.background, borderRadius: 6,
+    borderWidth: 1, borderColor: colors.border,
+  },
+  reportMenuLabel: { ...typography.uiSmallSemiBold, color: colors.textPrimary },
   avatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.memoAvatarBlue },
   authorText: { flex: 1 },
   location: { ...typography.xsmallRegular, color: colors.textSecondary },
