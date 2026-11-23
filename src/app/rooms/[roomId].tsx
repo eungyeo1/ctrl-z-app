@@ -1,6 +1,9 @@
 // S-11 독서방 상세 / 참여: 소개·참여자 수·규칙 미리보기 후 참여 (S-11-1)
 // ⚠️ 피그마에 이 화면 시안이 없어서, 독서방 목록 카드(지붕 카드)와 책 정보 화면 스타일을 따라 만들었습니다.
 // ⚠️ 참여 후 들어가는 "독서방 홈(S-13)"은 FE2 담당이라, 지금은 참여 완료 안내까지만 처리합니다.
+// 참여 버튼 분기:
+// - 비공개방 → S-12 비밀번호 시트 / 정원 초과 → S-34 대기열 시트
+// - 대기 중 → 순번 카드 + 대기 취소 / 우선참여권 → 바로 참여(S-34-2)
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -9,13 +12,15 @@ import { Screen } from "@/components/layout/Screen";
 import { StateView } from "@/components/layout/StateView";
 import { Button } from "@/components/ui";
 import { Icon } from "@/components/ui/Icon";
-import { useAuth } from "@/features/auth/AuthContext";
 import { BookCover } from "@/features/books/BookCover";
 import { deadlineText, periodText } from "@/features/rooms/format";
 import { MemberAvatars } from "@/features/rooms/MemberAvatars";
+import { PasswordSheet } from "@/features/rooms/PasswordSheet";
 import { RoofCard } from "@/features/rooms/RoofCard";
+import { WaitlistInfo } from "@/features/rooms/WaitlistInfo";
+import { WaitlistSheet } from "@/features/rooms/WaitlistSheet";
 import { useApi } from "@/hooks/useApi";
-import { getRoomDetail, joinRoom } from "@/services/api/rooms";
+import { getRoomDetail, joinRoom, leaveWaitlist } from "@/services/api/rooms";
 import { colors, radius, spacing, typography } from "@/theme";
 import type { JoinState } from "@/types/models";
 import { notify } from "@/utils/notify";
@@ -25,13 +30,15 @@ const joinButtonLabel: Record<JoinState, string> = {
   private: "비밀번호 입력하고 참여하기",
   full: "대기열에 등록하기",
   joined: "참여 중인 방이에요",
+  waiting: "대기 중이에요",
+  priority: "우선 참여하기",
 };
 
 export default function RoomDetail() {
   const router = useRouter();
   const { roomId } = useLocalSearchParams<{ roomId: string }>();
-  const { user } = useAuth();
   const [joining, setJoining] = useState(false);
+  const [sheet, setSheet] = useState<"password" | "waitlist" | null>(null);
 
   const detail = useApi(() => getRoomDetail(roomId), [roomId]);
 
@@ -51,21 +58,9 @@ export default function RoomDetail() {
   }
 
   const { room, book, joinState } = detail.data;
-  const isFull = joinState === "full";
+  const isFull = room.memberCount >= room.capacity;
 
-  const handleJoin = async () => {
-    if (!user) {
-      router.push("/login");
-      return;
-    }
-    if (joinState === "private") {
-      notify("비공개 독서방", "비밀번호 입력 화면(S-12)은 준비 중이에요.");
-      return;
-    }
-    if (joinState === "full") {
-      notify("정원이 가득 찼어요", "대기열 등록 화면(S-34)은 준비 중이에요.");
-      return;
-    }
+  const join = async () => {
     setJoining(true);
     const res = await joinRoom(room.id);
     setJoining(false);
@@ -74,7 +69,19 @@ export default function RoomDetail() {
       detail.reload();
       return;
     }
+    // TODO: FE2 독서방 홈(S-13) 주소가 정해지면 참여 후 그 화면으로 이동
     notify("독서방에 참여했어요!", "독서방 홈 화면은 FE2 작업이 합쳐지면 연결돼요.");
+    detail.reload();
+  };
+
+  const handleJoin = () => {
+    if (joinState === "private") setSheet("password");
+    else if (joinState === "full") setSheet("waitlist");
+    else if (joinState === "joinable" || joinState === "priority") join();
+  };
+
+  const handleLeaveWaitlist = async () => {
+    await leaveWaitlist(room.id);
     detail.reload();
   };
 
@@ -82,8 +89,13 @@ export default function RoomDetail() {
     <Screen
       edges={["bottom"]}
       footer={
-        <Button size="large" loading={joining} disabled={joinState === "joined"} onPress={handleJoin}>
-          {user ? joinButtonLabel[joinState] : "로그인하고 참여하기"}
+        <Button
+          size="large"
+          loading={joining}
+          disabled={joinState === "joined" || joinState === "waiting"}
+          onPress={handleJoin}
+        >
+          {joinButtonLabel[joinState]}
         </Button>
       }
     >
@@ -106,6 +118,14 @@ export default function RoomDetail() {
           )}
         </View>
       </RoofCard>
+
+      {detail.data.waitlist && (joinState === "waiting" || joinState === "priority") ? (
+        <WaitlistInfo
+          entry={detail.data.waitlist}
+          priority={joinState === "priority"}
+          onLeave={handleLeaveWaitlist}
+        />
+      ) : null}
 
       <Pressable
         accessibilityRole="button"
@@ -137,6 +157,25 @@ export default function RoomDetail() {
           </Text>
         ))}
       </View>
+
+      <PasswordSheet
+        roomId={room.id}
+        visible={sheet === "password"}
+        onClose={() => setSheet(null)}
+        onVerified={() => {
+          setSheet(null);
+          join();
+        }}
+      />
+      <WaitlistSheet
+        room={room}
+        visible={sheet === "waitlist"}
+        onClose={() => setSheet(null)}
+        onRegistered={() => {
+          setSheet(null);
+          detail.reload();
+        }}
+      />
     </Screen>
   );
 }

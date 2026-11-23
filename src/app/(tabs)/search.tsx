@@ -15,13 +15,10 @@ import { searchBooks } from "@/services/api/books";
 import { addRecentSearch, getRecentSearches } from "@/services/api/users";
 import { colors, radius, spacing, typography } from "@/theme";
 import type { Book } from "@/types/models";
-import { notify } from "@/utils/notify";
 
 // 입력이 멈춘 뒤 이 시간만큼 기다렸다가 검색합니다.
 const SEARCH_DELAY_MS = 300;
 
-// TODO: S-06 책 등록 요청 화면 생기면 router.push 로 교체
-const openBookRequest = () => notify("책 등록 요청", "책 등록 요청 화면(S-06)은 준비 중이에요.");
 
 export default function Search() {
   const router = useRouter();
@@ -59,8 +56,7 @@ export default function Search() {
 
   return (
     <Screen>
-      {/* TODO: S-51 알림센터 연결 */}
-      <AppHeader onBellPress={() => notify("알림센터(S-51)는 준비 중이에요.")} />
+      <AppHeader />
       <Text style={styles.title}>어떤 책을 펼쳐볼까요</Text>
 
       <View style={styles.searchArea}>
@@ -108,7 +104,11 @@ export default function Search() {
                 ? `'${query.trim()}'에 대한 검색 결과가 없어요.\n찾는 책이 없다면 직접 등록을 요청해 보세요.`
                 : "찾는 책이 없다면 직접 등록을 요청해 보세요."}
             </Text>
-            <Button variant="secondary" size="small" onPress={openBookRequest}>
+            <Button
+              variant="secondary"
+              size="small"
+              onPress={() => router.push({ pathname: "/books/request", params: { title: query.trim() } })}
+            >
               책 등록 요청
             </Button>
           </View>

@@ -21,21 +21,7 @@ const sinceText = (ymd: string) => {
   return `${y}년 ${Number(m)}월부터 함께 읽는 중`;
 };
 
-// TODO: S-28 아카이브 목록, S-51 알림센터, 프로필 수정·계정 설정 화면 생기면 router.push 로 교체
-const menus: { icon: IconName; label: string; description: string; onPress: () => void }[] = [
-  {
-    icon: "bookmark-outline",
-    label: "아카이브",
-    description: "완독·중단된 책",
-    onPress: () => notify("아카이브(S-28)는 준비 중이에요."),
-  },
-  {
-    icon: "reorder-three-outline",
-    label: "계정 설정",
-    description: "취향·비밀번호 변경",
-    onPress: () => notify("계정 설정은 준비 중이에요."),
-  },
-];
+type MenuItem = { icon: IconName; label: string; description: string; onPress: () => void };
 
 export default function MyPage() {
   const router = useRouter();
@@ -50,7 +36,23 @@ export default function MyPage() {
     }, [reload]),
   );
 
-  const header = <AppHeader title="마이페이지" onBellPress={() => notify("알림센터(S-51)는 준비 중이에요.")} />;
+  const header = <AppHeader title="마이페이지" />;
+
+  const menus: MenuItem[] = [
+    {
+      icon: "bookmark-outline",
+      label: "아카이브",
+      description: "완독·중단된 책",
+      onPress: () => router.push("/archive"),
+    },
+    {
+      icon: "reorder-three-outline",
+      label: "계정 설정",
+      description: "취향·비밀번호 변경",
+      // TODO: 계정 설정 화면(취향 수정은 S-03 재사용, 비밀번호 변경) — 담당·시안 확인 필요
+      onPress: () => notify("계정 설정은 준비 중이에요."),
+    },
+  ];
 
   if (!user) {
     return (
@@ -83,6 +85,7 @@ export default function MyPage() {
           <Text style={styles.nickname}>{user.nickname}</Text>
           <Text style={styles.meta}>{sinceText(user.joinedAt)}</Text>
         </View>
+        {/* TODO: 피그마 "프로필 수정" 화면 — 담당 확인 필요 */}
         <Button variant="secondary" size="small" onPress={() => notify("프로필 수정은 준비 중이에요.")}>
           수정
         </Button>

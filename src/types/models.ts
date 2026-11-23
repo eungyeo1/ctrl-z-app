@@ -1,3 +1,5 @@
+import type { Href } from "expo-router";
+
 // 여러 화면에서 함께 쓰는 데이터 타입입니다.
 // 필드 이름은 API 명세서 기준으로 맞추고, 서버 응답이 정해지면 여기만 고치면 됩니다.
 
@@ -19,7 +21,15 @@ export interface User {
   nickname: string;
   bio?: string;
   favoriteGenres: string[];
+  readingPurposes: string[];
   joinedAt: string; // YYYY-MM-DD
+}
+
+// 회원가입 진행 중 정보 (S-01 → S-31 → S-30 사이에 들고 다님)
+export interface SignupDraft {
+  email: string;
+  password: string;
+  agreements: { terms: boolean; privacy: boolean; marketing: boolean };
 }
 
 // 마이페이지 상단 숫자 3개
@@ -74,4 +84,76 @@ export interface MyRoom {
 }
 
 // 방 상세 화면에서 참여 버튼 상태를 정하는 값
-export type JoinState = "joinable" | "joined" | "full" | "private";
+// waiting: 대기열 등록됨 / priority: 자리가 나서 우선참여권을 받음(S-34-2)
+export type JoinState = "joinable" | "joined" | "full" | "private" | "waiting" | "priority";
+
+// 대기열 (S-34)
+export interface WaitlistEntry {
+  roomId: string;
+  position: number; // 1부터
+  priorityUntil?: string; // ISO 시각. 있으면 우선참여권 보유 중
+}
+
+// 비공개방 비밀번호 확인 결과 (S-12)
+export interface PasswordCheckResult {
+  ok: boolean;
+  attemptsLeft: number;
+  lockedUntil?: string; // ISO 시각. 5회 연속 실패 시
+}
+
+// 책 등록 요청 (S-06, S-33)
+export type BookRequestStatus = "pending" | "approved" | "rejected";
+
+export interface BookRequest {
+  id: string;
+  title: string;
+  author: string;
+  isbn?: string;
+  status: BookRequestStatus;
+  rejectReason?: string;
+  bookId?: string; // 승인되면 생성된 책 id
+  requesterCount: number; // 같은 ISBN 요청이 합쳐진 수 (S-06-2)
+}
+
+// 아카이브 (S-28, S-29)
+export type ArchiveStatus = "reading" | "finished" | "stopped";
+
+export interface ArchiveEntry {
+  room: Room;
+  book: Book;
+  status: ArchiveStatus;
+  memoCount: number;
+}
+
+export interface Memo {
+  id: string;
+  chapter: string;
+  page: number;
+  quote?: string;
+  body: string;
+  createdAt: string; // ISO
+}
+
+export type ExportFormat = "pdf" | "image" | "text";
+
+// 알림센터 (S-51)
+export type NotificationType =
+  | "memo"
+  | "comment"
+  | "reply"
+  | "report"
+  | "deadline"
+  | "roomSetting"
+  | "bookRequest"
+  | "waitlist";
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  createdAt: string; // ISO
+  read: boolean;
+  // 누르면 이동할 화면 (S-51-2 딥링크)
+  link?: Href;
+}

@@ -19,7 +19,6 @@ import { useApi } from "@/hooks/useApi";
 import { getRecommendedBooks } from "@/services/api/books";
 import { getMyRooms, getRecommendedRooms } from "@/services/api/rooms";
 import { colors, spacing, typography } from "@/theme";
-import { notify } from "@/utils/notify";
 
 // 홈에서는 참여 중인 방을 2개까지만 보여주고 나머지는 "전체보기"로 봅니다.
 const MY_ROOM_PREVIEW = 2;
@@ -48,8 +47,7 @@ export default function Home() {
 
   return (
     <Screen>
-      {/* TODO: S-51 알림센터 화면 생기면 연결 */}
-      <AppHeader onBellPress={() => notify("알림센터(S-51)는 준비 중이에요.")} />
+      <AppHeader />
 
       <View style={styles.greeting}>
         <Text style={styles.greetingSmall}>{nickname ? `${nickname} 님, 오늘도 한 페이지` : "오늘도 한 페이지"}</Text>

@@ -2,6 +2,7 @@
 // S-01-1 이메일·비밀번호 입력 후 "이메일로 계속하기"
 //        → 가입된 이메일이면 로그인, 처음 보는 이메일이면 약관 동의(S-31)로 분기
 // S-01-2 카카오 / Apple 소셜 로그인 진입
+// 로그인에 성공하면 루트 레이아웃의 가드가 홈으로 보내줍니다. (router 이동 필요 없음)
 //
 // 목업 테스트 계정: test@ctrlz.com / password1!
 import { useRouter } from "expo-router";
@@ -11,21 +12,15 @@ import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } fro
 import { Logo } from "@/components/layout/Logo";
 import { Screen } from "@/components/layout/Screen";
 import { Button, TextField } from "@/components/ui";
-import { Icon } from "@/components/ui/Icon";
 import { useAuth } from "@/features/auth/AuthContext";
-import { checkEmail, login, socialLogin, type LoginResult } from "@/services/api/auth";
+import { checkEmail as checkEmailExists, login, socialLogin, type LoginResult } from "@/services/api/auth";
 import { colors, radius, spacing, typography } from "@/theme";
 import type { ApiResponse } from "@/types/models";
-import { notify } from "@/utils/notify";
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-// TODO: S-31 약관 동의 화면 생기면 router.push({ pathname: "/terms", params: { email } }) 로 교체
-const goSignUp = () => notify("처음 오셨네요!", "회원가입(약관 동의 S-31) 화면은 준비 중이에요.");
+import { checkEmail, checkPassword, PASSWORD_RULE_TEXT } from "@/utils/validation";
 
 export default function Login() {
   const router = useRouter();
-  const { signIn } = useAuth();
+  const { signIn, setSignupDraft } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,28 +28,38 @@ export default function Login() {
   const [passwordError, setPasswordError] = useState<string>();
   const [loading, setLoading] = useState(false);
 
-  const close = () => {
-    if (router.canGoBack()) router.back();
-    else router.replace("/");
-  };
-
   const finishLogin = (res: ApiResponse<LoginResult>) => {
     if (!res.success || !res.data) {
       setPasswordError(res.error?.message ?? "로그인하지 못했어요.");
       return;
     }
     signIn(res.data.user, res.data.accessToken);
-    close();
+  };
+
+  // 처음 보는 이메일 → 입력한 이메일·비밀번호를 들고 약관 동의(S-31)로
+  const startSignUp = () => {
+    const emailProblem = checkEmail(email);
+    const passwordProblem = checkPassword(password);
+    setEmailError(emailProblem);
+    setPasswordError(passwordProblem);
+    if (emailProblem || passwordProblem) return;
+    setSignupDraft({
+      email: email.trim().toLowerCase(),
+      password,
+      agreements: { terms: false, privacy: false, marketing: false },
+    });
+    router.push("/terms");
   };
 
   const handleSubmit = async () => {
     const trimmed = email.trim();
-    if (!EMAIL_PATTERN.test(trimmed)) {
-      setEmailError("이메일 형식을 확인해 주세요.");
+    const emailProblem = checkEmail(trimmed);
+    if (emailProblem) {
+      setEmailError(emailProblem);
       return;
     }
     setLoading(true);
-    const check = await checkEmail(trimmed);
+    const check = await checkEmailExists(trimmed);
     if (!check.success || !check.data) {
       setLoading(false);
       setEmailError(check.error?.message);
@@ -62,7 +67,7 @@ export default function Login() {
     }
     if (!check.data.exists) {
       setLoading(false);
-      goSignUp();
+      startSignUp();
       return;
     }
     if (!password) {
@@ -85,12 +90,6 @@ export default function Login() {
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <Screen edges={["top", "bottom"]} contentStyle={styles.content}>
-        {router.canGoBack() ? (
-          <Pressable accessibilityRole="button" accessibilityLabel="닫기" onPress={close} hitSlop={spacing.sm} style={styles.close}>
-            <Icon name="close" size={22} color={colors.textSecondary} />
-          </Pressable>
-        ) : null}
-
         <View style={styles.logo}>
           <Logo size="large" />
         </View>
@@ -121,6 +120,7 @@ export default function Login() {
               setPasswordError(undefined);
             }}
             placeholder="비밀번호"
+            helperText={passwordError ? undefined : `처음이라면 ${PASSWORD_RULE_TEXT}로 정해 주세요.`}
             secureTextEntry
             autoComplete="current-password"
             returnKeyType="done"
@@ -132,6 +132,15 @@ export default function Login() {
           <Button size="large" loading={loading} disabled={!email.trim()} onPress={handleSubmit} style={styles.submit}>
             이메일로 계속하기
           </Button>
+          {/* S-02 비밀번호 재설정 (피그마에 위치 없음 — 디자인 확인 필요) */}
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push({ pathname: "/password-reset", params: { email: email.trim() } })}
+            hitSlop={spacing.sm}
+            style={styles.forgot}
+          >
+            <Text style={styles.forgotText}>비밀번호를 잊으셨나요?</Text>
+          </Pressable>
         </View>
 
         <View style={styles.divider} />
@@ -148,7 +157,7 @@ export default function Login() {
 
         <View style={styles.signUpRow}>
           <Text style={styles.signUpText}>아직 계정이 없으신가요?</Text>
-          <Pressable accessibilityRole="button" onPress={goSignUp} hitSlop={spacing.sm}>
+          <Pressable accessibilityRole="button" onPress={startSignUp} hitSlop={spacing.sm}>
             <Text style={styles.signUpLink}>가입하기</Text>
           </Pressable>
         </View>
@@ -166,8 +175,13 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xl,
     gap: spacing.xl,
   },
-  close: {
-    alignSelf: "flex-start",
+  forgot: {
+    alignSelf: "center",
+  },
+  forgotText: {
+    ...typography.uiSmallRegular,
+    color: colors.textSecondary,
+    textDecorationLine: "underline",
   },
   logo: {
     alignItems: "center",
