@@ -63,6 +63,10 @@ const sortOptions = [
   { label: "챕터순", value: "chapter" },
 ];
 
+const reportMenuWidth = 76;
+const reportMenuHeight = 36;
+const reportMenuMargin = 12;
+
 function MemoText({ memo, avatarColor, onOpenReportMenu, reportMenuOpen, reported }: {
   memo: RelatedMemo;
   avatarColor: string;
@@ -301,8 +305,8 @@ export function MemoFeed() {
                 setReportMenu(undefined);
               }}
               style={[styles.reportMenu, {
-                left: Math.max(12, Math.min(reportMenu.right, windowWidth - 12) - 92),
-                top: Math.max(0, Math.min(reportMenu.bottom, windowHeight - 56)),
+                left: Math.max(reportMenuMargin, Math.min(reportMenu.right, windowWidth - reportMenuMargin) - reportMenuWidth),
+                top: Math.max(0, Math.min(reportMenu.bottom, windowHeight - reportMenuHeight - reportMenuMargin)),
               }]}
             >
               <Text style={styles.reportMenuLabel}>신고하기</Text>
@@ -379,7 +383,7 @@ const styles = StyleSheet.create({
   reportButton: { width: 44, minHeight: 44, marginRight: -10, alignItems: "center", justifyContent: "center", gap: 3 },
   menuDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: colors.textPrimary },
   reportMenu: {
-    position: "absolute", width: 92, minHeight: 44,
+    position: "absolute", width: reportMenuWidth, minHeight: reportMenuHeight,
     alignItems: "center", justifyContent: "center", backgroundColor: colors.background, borderRadius: 6,
     borderWidth: 1, borderColor: colors.border,
   },
