@@ -1,4 +1,4 @@
-import { Dropdown } from "@/components/ui";
+import { Dropdown, MemoCard, SpoilerMemoCard, type MemoCardContent } from "@/components/ui";
 import { MemoComposer, type MemoDraft } from "@/features/memos/MemoComposer";
 import { MemoReport, type MemoReportDraft } from "@/features/memos/MemoReport";
 import { colors, typography } from "@/theme";
@@ -9,25 +9,14 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type Memo = {
+type Memo = MemoCardContent & {
   id: number;
-  author: string;
   chapter: number;
-  location: string;
-  quote?: string;
-  body: string;
-  related: RelatedMemo[];
+  related: MemoCardContent[];
   locked?: boolean;
   spoiler?: boolean;
   attachmentUri?: string;
   summary?: string;
-};
-
-type RelatedMemo = {
-  author: string;
-  body: string;
-  location: string;
-  quote?: string;
 };
 
 const initialMemos: Memo[] = [
@@ -67,51 +56,28 @@ const reportMenuWidth = 76;
 const reportMenuHeight = 36;
 const reportMenuMargin = 12;
 
-function MemoText({ memo, avatarColor, onOpenReportMenu, reportMenuOpen, reported }: {
-  memo: RelatedMemo;
-  avatarColor: string;
-  onOpenReportMenu?: (right: number, bottom: number) => void;
-  reportMenuOpen?: boolean;
-  reported?: boolean;
+function MemoOptions({ author, onOpen, expanded }: {
+  author: string;
+  onOpen: (right: number, bottom: number) => void;
+  expanded: boolean;
 }) {
   const optionsButton = useRef<ComponentRef<typeof View>>(null);
 
   return (
-    <View style={styles.memoContents}>
-      <View style={styles.byline}>
-        <View style={[styles.avatar, { backgroundColor: avatarColor }]} />
-        <View style={styles.authorText}>
-          <Text style={styles.body}>{memo.author}</Text>
-          <Text style={styles.location}>{memo.location}</Text>
-        </View>
-        {onOpenReportMenu && (
-          <Pressable
-            ref={optionsButton}
-            accessibilityRole="button"
-            accessibilityLabel={`${memo.author} 님의 메모 옵션`}
-            accessibilityState={{ expanded: !!reportMenuOpen }}
-            onPress={() => optionsButton.current?.measureInWindow((x, y, width, height) => {
-              onOpenReportMenu(x + width, y + height);
-            })}
-            style={styles.reportButton}
-          >
-            <View style={styles.menuDot} />
-            <View style={styles.menuDot} />
-            <View style={styles.menuDot} />
-          </Pressable>
-        )}
-      </View>
-      {reported && (
-        <Text accessibilityLiveRegion="polite" style={styles.location}>신고가 이 화면에 임시 저장됐어요.</Text>
-      )}
-      {memo.quote && (
-        <View style={styles.quoteRow}>
-          <View style={styles.quoteRule} />
-          <Text style={styles.quote}>“{memo.quote}”</Text>
-        </View>
-      )}
-      <Text style={styles.body}>{memo.body}</Text>
-    </View>
+    <Pressable
+      ref={optionsButton}
+      accessibilityRole="button"
+      accessibilityLabel={`${author} 님의 메모 옵션`}
+      accessibilityState={{ expanded }}
+      onPress={() => optionsButton.current?.measureInWindow((x, y, width, height) => {
+        onOpen(x + width, y + height);
+      })}
+      style={styles.reportButton}
+    >
+      <View style={styles.menuDot} />
+      <View style={styles.menuDot} />
+      <View style={styles.menuDot} />
+    </Pressable>
   );
 }
 
@@ -154,13 +120,19 @@ export function MemoFeed() {
     setReportTarget(undefined);
   }
 
-  function reportActions(target: string, canReport = true) {
-    const reported = !!reports[target];
-    if (!canReport || reported) return { reported };
-
+  function reportActions(target: string, author: string) {
+    if (reports[target]) {
+      return { notice: <Text accessibilityLiveRegion="polite" style={styles.location}>신고가 이 화면에 임시 저장됐어요.</Text> };
+    }
+    if (author === "나") return {};
     return {
-      reportMenuOpen: reportMenu?.target === target,
-      onOpenReportMenu: (right: number, bottom: number) => setReportMenu({ target, right, bottom }),
+      headerAction: (
+        <MemoOptions
+          author={author}
+          expanded={reportMenu?.target === target}
+          onOpen={(right, bottom) => setReportMenu({ target, right, bottom })}
+        />
+      ),
     };
   }
 
@@ -184,48 +156,16 @@ export function MemoFeed() {
         </View>
         {sortedMemos.map((memo) =>
           memo.locked && !revealed.includes(memo.id) ? (
-            <View key={memo.id} style={[styles.card, styles.locked]}>
-              <View pointerEvents="none" style={styles.mask}>
-                <View style={[styles.avatar, styles.maskAvatar]} />
-                <View style={[styles.maskLine, { width: "55%" }]} />
-                <View style={[styles.maskLine, { width: "86%" }]} />
-                <View style={[styles.maskLine, { width: "67%" }]} />
-              </View>
-              <View style={styles.lockIcon}>
-                <View style={styles.lockHandle} />
-                <View style={styles.lockBody} />
-              </View>
-              <Text style={styles.lockText}>아직 읽지 않은 {memo.chapter}장 내용이에요</Text>
-              <Text style={styles.lockText}>스포일러가 포함되어 있을 수 있어요</Text>
-              <Pressable accessibilityRole="button" style={styles.reveal} onPress={() => setRevealTarget(memo)}>
-                <Text style={styles.actionText}>그래도 보기</Text>
-              </Pressable>
-            </View>
+            <SpoilerMemoCard key={memo.id} chapter={memo.chapter} onReveal={() => setRevealTarget(memo)} />
           ) : (
-            <View key={memo.id} style={memo.related.length ? styles.stack : undefined}>
-              {memo.related.length > 0 && (
-                <>
-                  <View style={[styles.sheet, styles.farSheet]} />
-                  <View style={[styles.sheet, styles.nearSheet]} />
-                </>
-              )}
-              <View style={styles.card}>
-                {memo.related.length > 0 && (
-                  <Image
-                    accessible={false}
-                    source={require("@/assets/images/memo-attach-file.png")}
-                    contentFit="contain"
-                    tintColor={colors.textSecondary}
-                    style={styles.clip}
-                  />
-                )}
-                <MemoText
-                  memo={memo}
-                  avatarColor={memo.id === 1 ? colors.memoAvatarBlue : colors.memoAvatarSand}
-                  {...reportActions(`memo:${memo.id}`, memo.author !== "나")}
-                />
-                {memo.spoiler && <Text style={styles.location}>스포일러가 포함된 메모</Text>}
-                {memo.related.length > 0 && (
+            <MemoCard
+              key={memo.id}
+              memo={memo}
+              avatarColor={memo.id === 1 ? colors.memoAvatarBlue : colors.memoAvatarSand}
+              spoiler={memo.spoiler}
+              stacked={memo.related.length > 0}
+              {...reportActions(`memo:${memo.id}`, memo.author)}
+              footer={memo.related.length > 0 && (
                   <Pressable accessibilityRole="button" style={styles.related} onPress={() => setDetail(memo)}>
                     <View style={styles.relatedAvatars}>
                       <View style={[styles.avatar, styles.roseAvatar]} />
@@ -234,9 +174,8 @@ export function MemoFeed() {
                     <Text style={styles.relatedText}>같은 장면에 대한 생각 {memo.related.length}개</Text>
                     <View style={styles.chevron} />
                   </Pressable>
-                )}
-              </View>
-            </View>
+              )}
+            />
           ),
         )}
       </ScrollView>
@@ -268,13 +207,12 @@ export function MemoFeed() {
           {detail.related.map((memo, index) => {
             const target = `cluster:${detail.id}:${index}`;
             return (
-              <View key={target} style={styles.card}>
-                <MemoText
-                  memo={memo}
-                  avatarColor={index === 0 ? colors.memoAvatarRose : colors.memoAvatarSand}
-                  {...reportActions(target)}
-                />
-              </View>
+              <MemoCard
+                key={target}
+                memo={memo}
+                avatarColor={index === 0 ? colors.memoAvatarRose : colors.memoAvatarSand}
+                {...reportActions(target, memo.author)}
+              />
             );
           })}
         </ScrollView>
@@ -369,25 +307,11 @@ const styles = StyleSheet.create({
   title: { ...typography.baseBold, color: colors.textPrimary },
   sortContainer: { width: 92 },
   sort: { minHeight: 32, paddingHorizontal: 12, backgroundColor: colors.disabled },
-  stack: { paddingVertical: 14, marginBottom: 7 },
-  sheet: { position: "absolute", left: 5, right: 5, top: 7, bottom: 6, borderRadius: 29 },
-  farSheet: { backgroundColor: colors.memoPaperFar, transform: [{ rotate: "4deg" }] },
-  nearSheet: { backgroundColor: colors.memoPaperBack, transform: [{ rotate: "-8deg" }] },
   card: {
     borderRadius: 29, padding: 25, gap: 18, backgroundColor: colors.memoPaper,
     elevation: 4, shadowColor: colors.shadow, shadowOpacity: 0.26,
     shadowRadius: 3, shadowOffset: { width: 0, height: 4 },
   },
-  clip: {
-    position: "absolute",
-    top: -15,
-    right: 31,
-    width: 44,
-    height: 44,
-    transform: [{ rotate: "30deg" }],
-  },
-  byline: { flexDirection: "row", alignItems: "center", gap: 8 },
-  memoContents: { gap: 18 },
   reportButton: { width: 44, minHeight: 44, marginRight: -10, alignItems: "center", justifyContent: "center", gap: 3 },
   menuDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: colors.textPrimary },
   reportMenu: {
@@ -397,12 +321,8 @@ const styles = StyleSheet.create({
   },
   reportMenuLabel: { ...typography.uiSmallSemiBold, color: colors.error },
   avatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.memoAvatarBlue },
-  authorText: { flex: 1 },
   location: { ...typography.xsmallRegular, color: colors.textSecondary },
   body: { ...typography.uiBaseRegular, color: colors.textPrimary },
-  quoteRow: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
-  quoteRule: { width: 2, height: 25, marginTop: 3, borderRadius: 2, backgroundColor: colors.textSecondary },
-  quote: { ...typography.xsmallRegular, flex: 1, color: colors.textSecondary },
   related: { flexDirection: "row", alignItems: "center", minHeight: 44, gap: 10 },
   relatedAvatars: { flexDirection: "row" },
   roseAvatar: { backgroundColor: colors.memoAvatarRose },
@@ -413,15 +333,6 @@ const styles = StyleSheet.create({
     width: 8, height: 8, borderRightWidth: 2, borderTopWidth: 2,
     borderColor: colors.textPrimary, transform: [{ rotate: "45deg" }],
   },
-  locked: { alignItems: "center", gap: 8, backgroundColor: colors.memoLocked, overflow: "hidden" },
-  mask: { ...StyleSheet.absoluteFill, gap: 9, padding: 28, opacity: 0.6 },
-  maskAvatar: { backgroundColor: colors.memoAvatarSand },
-  maskLine: { height: 8, borderRadius: 8, backgroundColor: colors.memoLockedPlaceholder },
-  lockIcon: { alignItems: "center", marginBottom: 4 },
-  lockHandle: { width: 10, height: 9, borderWidth: 2, borderBottomWidth: 0, borderRadius: 5, borderColor: colors.surface },
-  lockBody: { width: 16, height: 12, borderWidth: 2, borderRadius: 2, borderColor: colors.surface },
-  lockText: { ...typography.uiSmallSemiBold, color: colors.surface, textAlign: "center" },
-  reveal: { marginTop: 6, borderRadius: 24, paddingHorizontal: 22, minHeight: 36, justifyContent: "center", backgroundColor: colors.background },
   actionText: { ...typography.uiBaseSemiBold, color: colors.textPrimary },
   add: {
     position: "absolute", right: 38, width: 64, height: 64, borderRadius: 32,
