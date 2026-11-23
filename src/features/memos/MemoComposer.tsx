@@ -1,4 +1,5 @@
 import { Button, Dropdown } from "@/components/ui";
+import { QuoteSelection, sampleQuotePhoto, type QuotePhoto } from "@/features/memos/QuoteSelection";
 import { colors, typography } from "@/theme";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
@@ -37,8 +38,7 @@ export function MemoComposer({ onClose, onSave }: Props) {
   const [body, setBody] = useState("");
   const [spoiler, setSpoiler] = useState(false);
   const [attachmentUri, setAttachmentUri] = useState<string>();
-  const [quotePhoto, setQuotePhoto] = useState<string>();
-  const [quoteDraft, setQuoteDraft] = useState("");
+  const [quotePhoto, setQuotePhoto] = useState<QuotePhoto>();
   const [photoMenu, setPhotoMenu] = useState(false);
   const [photoError, setPhotoError] = useState("");
   const [picking, setPicking] = useState(false);
@@ -64,10 +64,9 @@ export function MemoComposer({ onClose, onSave }: Props) {
         : await ImagePicker.launchImageLibraryAsync(options);
       if (result.canceled) return;
 
-      const { uri } = result.assets[0];
+      const { uri, width, height } = result.assets[0];
       if (target === "quote") {
-        setQuoteDraft(quote);
-        setQuotePhoto(uri);
+        setQuotePhoto({ source: { uri }, aspectRatio: width > 0 && height > 0 ? width / height : 1 });
       } else {
         setAttachmentUri(uri);
       }
@@ -105,24 +104,14 @@ export function MemoComposer({ onClose, onSave }: Props) {
             <View style={styles.chevron} />
           </Pressable>
           {quotePhoto ? (
-            <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-              <Text style={styles.title}>기록할 문장 선택</Text>
-              <Image source={{ uri: quotePhoto }} style={styles.quotePhoto} contentFit="contain" accessibilityLabel="인용할 책 사진" />
-              <Text style={styles.hint}>사진을 보면서 기록할 문장을 옮겨 적어 주세요. 작성 화면에서 다시 수정할 수 있어요.</Text>
-              <TextInput
-                accessibilityLabel="기록할 문장"
-                multiline
-                value={quoteDraft}
-                onChangeText={setQuoteDraft}
-                placeholder="기록할 문장을 입력하세요"
-                placeholderTextColor={colors.textSecondary}
-                style={[styles.input, styles.quoteInput]}
-              />
-              <Button size="large" disabled={!quoteDraft.trim()} onPress={() => {
-                setQuote(quoteDraft.trim());
+            <QuoteSelection
+              photo={quotePhoto}
+              initialQuote={quote}
+              onDone={(selectedQuote) => {
+                setQuote(selectedQuote);
                 setQuotePhoto(undefined);
-              }}>완료</Button>
-            </ScrollView>
+              }}
+            />
           ) : (
             <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
               <Text style={styles.title}>메모 작성</Text>
@@ -150,6 +139,11 @@ export function MemoComposer({ onClose, onSave }: Props) {
                     <View style={styles.photoOptions}>
                       <Button variant="tertiary" onPress={() => void pickPhoto("quote", "camera")}>사진 촬영</Button>
                       <Button variant="tertiary" onPress={() => void pickPhoto("quote", "library")}>사진 선택</Button>
+                      <Button variant="tertiary" onPress={() => {
+                        setPhotoMenu(false);
+                        setPhotoError("");
+                        setQuotePhoto(sampleQuotePhoto);
+                      }}>샘플로 체험</Button>
                     </View>
                   )}
                 </View>
@@ -216,14 +210,11 @@ const styles = StyleSheet.create({
   quoteText: { ...typography.uiBaseRegular, color: colors.textPrimary, width: "100%", textAlign: "center", paddingVertical: 4 },
   photoOptions: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center" },
   input: { ...typography.uiBaseRegular, color: colors.textPrimary, backgroundColor: colors.memoPaper, minHeight: 165, padding: 22, borderRadius: 28, textAlignVertical: "top" },
-  quoteInput: { minHeight: 88 },
   counter: { ...typography.uiBaseRegular, color: colors.textPrimary, textAlign: "right" },
   checkRow: { flexDirection: "row", alignItems: "center", minHeight: 44, gap: 16 },
   checkbox: { width: 28, height: 28, borderRadius: 5, backgroundColor: colors.border, alignItems: "center", justifyContent: "center" },
   checked: { backgroundColor: colors.primary },
   checkmark: { ...typography.uiBaseSemiBold, color: colors.onPrimary },
-  quotePhoto: { width: "100%", aspectRatio: 1, borderRadius: 28, backgroundColor: colors.textBackground },
-  hint: { ...typography.uiBaseRegular, color: colors.textSecondary, backgroundColor: colors.textBackground, borderRadius: 24, padding: 18 },
   attachment: { flexDirection: "row", alignItems: "center", gap: 12 },
   thumbnail: { width: 60, height: 60, borderRadius: 12 },
   error: { ...typography.uiBaseRegular, color: colors.error },

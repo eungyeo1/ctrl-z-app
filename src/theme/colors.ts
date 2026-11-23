@@ -45,6 +45,7 @@ export const colors = {
   error: palette.red, // ⚠️ 임시
 
   memoPaper: "#F5F2DB",
+  quoteHighlight: "rgba(235, 140, 149, 0.38)",
   memoSummary: "#EEE9C9",
   memoPaperBack: "#D6D6C2",
   memoPaperFar: "#BABBAE",
