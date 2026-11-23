@@ -139,3 +139,19 @@ const [chapter, setChapter] = useState("chapter-1");
 ```
 
 바깥 View에는 기본 모양, variant, 사용자 `style` 순으로 적용됩니다. 안쪽 View에는 `padded`가 참일 때 기본 여백을 주고, `contentStyle`로 추가 조정할 수 있습니다. 나머지 React Native `View` props도 전달할 수 있습니다.
+
+## MemoCard / SpoilerMemoCard
+
+독서방 메모 피드와 아카이브 메모 타임라인에서 공통으로 사용할 수 있습니다.
+
+```tsx
+import { MemoCard, SpoilerMemoCard } from "@/components/ui";
+
+return isLocked ? (
+  <SpoilerMemoCard chapter={chapter} onReveal={openRevealConfirmation} />
+) : (
+  <MemoCard memo={{ author, location, body, quote }} spoiler={isSpoiler} />
+);
+```
+
+`MemoCard`는 선택적으로 `avatarColor`, `stacked`, `headerAction`, `notice`, `footer`를 받습니다. 잠긴 상태에는 원문 없이 `SpoilerMemoCard`를 렌더링합니다. 잠금 상태 판단, 열람 확인, API 호출 및 목록 갱신은 사용하는 화면에서 처리합니다.
