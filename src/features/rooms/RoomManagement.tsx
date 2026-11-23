@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui";
 import { colors, typography } from "@/theme";
+import { Image } from "expo-image";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
@@ -188,11 +189,26 @@ function MemberLabel({ member, description }: { member: Member; description: str
 }
 
 function MenuIcon({ kind }: { kind: (typeof menu)[number]["icon"] }) {
+  if (kind !== "member") {
+    const source = kind === "edit"
+      ? require("@/assets/images/room-border-color.png")
+      : require("@/assets/images/room-delete.png");
+
+    return (
+      <Image
+        accessible={false}
+        source={source}
+        contentFit="contain"
+        tintColor={kind === "delete" ? colors.error : colors.textPrimary}
+        style={styles.menuImage}
+      />
+    );
+  }
+
   return (
     <View style={styles.icon}>
-      {kind === "member" && <><View style={styles.personHead} /><View style={styles.personBody} /></>}
-      {kind === "edit" && <><View style={styles.pen} /><View style={styles.penLine} /></>}
-      {kind === "delete" && <><View style={styles.binHandle} /><View style={styles.bin} /></>}
+      <View style={styles.personHead} />
+      <View style={styles.personBody} />
     </View>
   );
 }
@@ -214,12 +230,9 @@ const styles = StyleSheet.create({
   next: { width: 8, height: 8, borderTopWidth: 2, borderRightWidth: 2, borderColor: colors.textPrimary, transform: [{ rotate: "45deg" }] },
   pressed: { opacity: 0.65 },
   icon: { width: 20, height: 22, alignItems: "center", justifyContent: "center" },
+  menuImage: { width: 20, height: 22 },
   personHead: { width: 10, height: 10, borderRadius: 5, borderWidth: 1.5, borderColor: colors.textPrimary },
   personBody: { width: 16, height: 10, borderRadius: 8, borderWidth: 1.5, borderColor: colors.textPrimary },
-  pen: { width: 15, height: 5, borderWidth: 1.5, borderColor: colors.textPrimary, transform: [{ rotate: "-45deg" }] },
-  penLine: { width: 16, height: 1.5, marginTop: 6, backgroundColor: colors.textPrimary },
-  binHandle: { width: 7, height: 4, borderWidth: 1.5, borderColor: colors.error },
-  bin: { width: 12, height: 12, borderWidth: 1.5, borderColor: colors.error },
   list: { gap: 24, marginTop: 12 },
   member: { gap: 12 },
   memberRow: { flexDirection: "row", alignItems: "center", minHeight: 58, gap: 12 },

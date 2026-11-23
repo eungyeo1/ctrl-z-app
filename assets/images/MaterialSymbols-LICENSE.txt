@@ -1,5 +1,6 @@
-memo-attach-file.png is a raster rendering of the attach_file glyph from
-Google's Material Symbols Outlined font (https://github.com/google/material-design-icons)
+memo-attach-file.png, room-border-color.png, and room-delete.png are raster
+renderings of the attach_file, border_color, and delete glyphs from Google's
+Material Symbols Outlined font (https://github.com/google/material-design-icons)
 with FILL=0, wght=400, GRAD=0, opsz=24.
 
                                  Apache License
