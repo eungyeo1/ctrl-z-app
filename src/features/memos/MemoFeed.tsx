@@ -5,7 +5,7 @@ import { colors, typography } from "@/theme";
 import { Image } from "expo-image";
 import { useRef, useState, type ComponentRef } from "react";
 import {
-  Modal, Pressable, ScrollView, StyleSheet, Text, View,
+  Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -63,28 +63,32 @@ const sortOptions = [
   { label: "챕터순", value: "chapter" },
 ];
 
-function MemoText({ memo, avatarColor, onReport, onToggleReportMenu, reportMenuOpen, reported }: {
+function MemoText({ memo, avatarColor, onOpenReportMenu, reportMenuOpen, reported }: {
   memo: RelatedMemo;
   avatarColor: string;
-  onReport?: () => void;
-  onToggleReportMenu?: () => void;
+  onOpenReportMenu?: (right: number, bottom: number) => void;
   reportMenuOpen?: boolean;
   reported?: boolean;
 }) {
+  const optionsButton = useRef<ComponentRef<typeof View>>(null);
+
   return (
-    <View style={[styles.memoContents, reportMenuOpen && styles.openMemoContents]}>
+    <View style={styles.memoContents}>
       <View style={styles.byline}>
         <View style={[styles.avatar, { backgroundColor: avatarColor }]} />
         <View style={styles.authorText}>
           <Text style={styles.body}>{memo.author}</Text>
           <Text style={styles.location}>{memo.location}</Text>
         </View>
-        {onToggleReportMenu && (
+        {onOpenReportMenu && (
           <Pressable
+            ref={optionsButton}
             accessibilityRole="button"
             accessibilityLabel={`${memo.author} 님의 메모 옵션`}
             accessibilityState={{ expanded: !!reportMenuOpen }}
-            onPress={onToggleReportMenu}
+            onPress={() => optionsButton.current?.measureInWindow((x, y, width, height) => {
+              onOpenReportMenu(x + width, y + height);
+            })}
             style={styles.reportButton}
           >
             <View style={styles.menuDot} />
@@ -103,17 +107,13 @@ function MemoText({ memo, avatarColor, onReport, onToggleReportMenu, reportMenuO
         </View>
       )}
       <Text style={styles.body}>{memo.body}</Text>
-      {reportMenuOpen && (
-        <Pressable accessibilityRole="button" onPress={onReport} style={styles.reportMenu}>
-          <Text style={styles.reportMenuLabel}>신고하기</Text>
-        </Pressable>
-      )}
     </View>
   );
 }
 
 export function MemoFeed() {
   const { bottom } = useSafeAreaInsets();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const [memos, setMemos] = useState(initialMemos);
   const [sort, setSort] = useState("popular");
   const [revealed, setRevealed] = useState<number[]>([]);
@@ -121,7 +121,7 @@ export function MemoFeed() {
   const [revealTarget, setRevealTarget] = useState<Memo | null>(null);
   const [writing, setWriting] = useState(false);
   const [reportTarget, setReportTarget] = useState<string>();
-  const [reportMenuTarget, setReportMenuTarget] = useState<string>();
+  const [reportMenu, setReportMenu] = useState<{ target: string; right: number; bottom: number }>();
   const [reports, setReports] = useState<Record<string, MemoReportDraft>>({});
   const feedScroll = useRef<ComponentRef<typeof ScrollView>>(null);
   const sortedMemos = [...memos].sort((a, b) => {
@@ -155,12 +155,8 @@ export function MemoFeed() {
     if (!canReport || reported) return { reported };
 
     return {
-      reportMenuOpen: reportMenuTarget === target,
-      onToggleReportMenu: () => setReportMenuTarget((current) => current === target ? undefined : target),
-      onReport: () => {
-        setReportMenuTarget(undefined);
-        setReportTarget(target);
-      },
+      reportMenuOpen: reportMenu?.target === target,
+      onOpenReportMenu: (right: number, bottom: number) => setReportMenu({ target, right, bottom }),
     };
   }
 
@@ -168,7 +164,6 @@ export function MemoFeed() {
     <View style={styles.feed}>
       <ScrollView
         ref={feedScroll}
-        onScrollBeginDrag={() => setReportMenuTarget(undefined)}
         contentContainerStyle={styles.scroll}
         style={detail ? styles.hidden : undefined}
       >
@@ -177,10 +172,7 @@ export function MemoFeed() {
           <Dropdown
             options={sortOptions}
             value={sort}
-            onValueChange={(value) => {
-              setReportMenuTarget(undefined);
-              setSort(value);
-            }}
+            onValueChange={setSort}
             shadowPosition="none"
             style={styles.sort}
             containerStyle={styles.sortContainer}
@@ -230,10 +222,7 @@ export function MemoFeed() {
                 />
                 {memo.spoiler && <Text style={styles.location}>스포일러가 포함된 메모</Text>}
                 {memo.related.length > 0 && (
-                  <Pressable accessibilityRole="button" style={styles.related} onPress={() => {
-                    setReportMenuTarget(undefined);
-                    setDetail(memo);
-                  }}>
+                  <Pressable accessibilityRole="button" style={styles.related} onPress={() => setDetail(memo)}>
                     <View style={styles.relatedAvatars}>
                       <View style={[styles.avatar, styles.roseAvatar]} />
                       <View style={[styles.avatar, styles.sandAvatar, styles.overlap]} />
@@ -248,16 +237,10 @@ export function MemoFeed() {
         )}
       </ScrollView>
       {detail && (
-        <ScrollView
-          contentContainerStyle={[styles.scroll, styles.clusterScroll]}
-          onScrollBeginDrag={() => setReportMenuTarget(undefined)}
-        >
+        <ScrollView contentContainerStyle={[styles.scroll, styles.clusterScroll]}>
           <View style={styles.heading}>
             <Text style={styles.title}>메모 피드</Text>
-            <Pressable accessibilityRole="button" onPress={() => {
-              setReportMenuTarget(undefined);
-              setDetail(null);
-            }} style={styles.backToFeed}>
+            <Pressable accessibilityRole="button" onPress={() => setDetail(null)} style={styles.backToFeed}>
               <Text style={styles.actionText}>목록으로</Text>
             </Pressable>
           </View>
@@ -294,9 +277,41 @@ export function MemoFeed() {
         <View style={styles.plusVertical} />
       </Pressable>}
       {writing && <MemoComposer onClose={() => setWriting(false)} onSave={saveDraft} />}
-      {reportTarget !== undefined && (
-        <MemoReport onClose={() => setReportTarget(undefined)} onSubmit={saveReport} />
-      )}
+      <Modal
+        transparent
+        statusBarTranslucent
+        visible={reportMenu !== undefined || reportTarget !== undefined}
+        onRequestClose={() => {
+          setReportMenu(undefined);
+          setReportTarget(undefined);
+        }}
+      >
+        {reportMenu ? (
+          <View style={styles.feed}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="메모 옵션 닫기"
+              style={StyleSheet.absoluteFill}
+              onPress={() => setReportMenu(undefined)}
+            />
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                setReportTarget(reportMenu.target);
+                setReportMenu(undefined);
+              }}
+              style={[styles.reportMenu, {
+                left: Math.max(12, Math.min(reportMenu.right, windowWidth - 12) - 92),
+                top: Math.max(0, Math.min(reportMenu.bottom, windowHeight - 56)),
+              }]}
+            >
+              <Text style={styles.reportMenuLabel}>신고하기</Text>
+            </Pressable>
+          </View>
+        ) : reportTarget !== undefined && (
+          <MemoReport onClose={() => setReportTarget(undefined)} onSubmit={saveReport} />
+        )}
+      </Modal>
       <Modal
         transparent
         animationType="fade"
@@ -361,15 +376,14 @@ const styles = StyleSheet.create({
   },
   byline: { flexDirection: "row", alignItems: "center", gap: 8 },
   memoContents: { gap: 18 },
-  openMemoContents: { zIndex: 1, minHeight: 84 },
   reportButton: { width: 44, minHeight: 44, marginRight: -10, alignItems: "center", justifyContent: "center", gap: 3 },
   menuDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: colors.textPrimary },
   reportMenu: {
-    position: "absolute", top: 40, right: 0, minHeight: 44, paddingHorizontal: 16,
-    justifyContent: "center", backgroundColor: colors.background, borderRadius: 6,
+    position: "absolute", width: 92, minHeight: 44,
+    alignItems: "center", justifyContent: "center", backgroundColor: colors.background, borderRadius: 6,
     borderWidth: 1, borderColor: colors.border,
   },
-  reportMenuLabel: { ...typography.uiSmallSemiBold, color: colors.textPrimary },
+  reportMenuLabel: { ...typography.uiSmallSemiBold, color: colors.error },
   avatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.memoAvatarBlue },
   authorText: { flex: 1 },
   location: { ...typography.xsmallRegular, color: colors.textSecondary },

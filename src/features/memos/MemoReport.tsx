@@ -2,7 +2,7 @@ import { Button } from "@/components/ui";
 import { colors, typography } from "@/theme";
 import { useState } from "react";
 import {
-  KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet,
+  KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet,
   Text, TextInput, View,
 } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
@@ -31,36 +31,35 @@ export function MemoReport({ onClose, onSubmit }: {
   }
 
   return (
-    <Modal visible animationType="slide" presentationStyle="fullScreen" statusBarTranslucent onRequestClose={onClose}>
-      <SafeAreaProvider style={styles.screen}>
-        <SafeAreaView style={styles.safeArea}>
-          <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-            <Pressable accessibilityRole="button" accessibilityLabel="뒤로" onPress={onClose} style={styles.back}>
-              <View style={styles.chevron} />
-            </Pressable>
-            <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-              <Text accessibilityRole="header" style={styles.title}>신고하기</Text>
-              <Text style={styles.hint}>신고 대상에게는 신고자의 정보가 공개되지 않아요.</Text>
-              <View accessibilityRole="radiogroup" accessibilityLabel="신고 유형" style={styles.reasons}>
-                {reasons.map((option) => {
-                  const selected = option.id === reason;
-                  return (
-                    <Pressable
-                      key={option.id}
-                      accessibilityRole="radio"
-                      accessibilityState={{ checked: selected }}
-                      onPress={() => setReason(option.id)}
-                      style={[styles.card, styles.option, selected && styles.selected]}
-                    >
-                      <View style={[styles.radio, selected && styles.radioSelected]}>
-                        {selected && <View style={styles.dot} />}
-                      </View>
-                      <View style={styles.copy}>
-                        <Text style={styles.label}>{option.title}</Text>
-                        <Text style={styles.hint}>{option.description}</Text>
-                      </View>
-                    </Pressable>
-                  );
+    <SafeAreaProvider style={styles.screen}>
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+          <Pressable accessibilityRole="button" accessibilityLabel="뒤로" onPress={onClose} style={styles.back}>
+            <View style={styles.chevron} />
+          </Pressable>
+          <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+            <Text accessibilityRole="header" style={styles.title}>신고하기</Text>
+            <Text style={styles.hint}>신고 대상에게는 신고자의 정보가 공개되지 않아요.</Text>
+            <View accessibilityRole="radiogroup" accessibilityLabel="신고 유형" style={styles.reasons}>
+              {reasons.map((option) => {
+                const selected = option.id === reason;
+                return (
+                  <Pressable
+                    key={option.id}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: selected }}
+                    onPress={() => setReason(option.id)}
+                    style={[styles.card, styles.option, selected && styles.selected]}
+                  >
+                    <View style={[styles.radio, selected && styles.radioSelected]}>
+                      {selected && <View style={styles.dot} />}
+                    </View>
+                    <View style={styles.copy}>
+                      <Text style={styles.label}>{option.title}</Text>
+                      <Text style={styles.hint}>{option.description}</Text>
+                    </View>
+                  </Pressable>
+                );
                 })}
               </View>
               <Text style={styles.label}>신고 사유 <Text style={styles.hint}>(선택)</Text></Text>
@@ -80,7 +79,6 @@ export function MemoReport({ onClose, onSubmit }: {
           </KeyboardAvoidingView>
         </SafeAreaView>
       </SafeAreaProvider>
-    </Modal>
   );
 }
 
