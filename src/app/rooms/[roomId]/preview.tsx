@@ -15,6 +15,7 @@ import { Button } from "@/components/ui";
 import { Icon } from "@/components/ui/Icon";
 import { BookCover } from "@/features/books/BookCover";
 import { deadlineText, periodText } from "@/features/rooms/format";
+import { roomHomeHref } from "@/features/rooms/routes";
 import { MemberAvatars } from "@/features/rooms/MemberAvatars";
 import { PasswordSheet } from "@/features/rooms/PasswordSheet";
 import { RoofCard } from "@/features/rooms/RoofCard";
@@ -30,7 +31,7 @@ const joinButtonLabel: Record<JoinState, string> = {
   joinable: "참여하기",
   private: "비밀번호 입력하고 참여하기",
   full: "대기열에 등록하기",
-  joined: "참여 중인 방이에요",
+  joined: "독서방으로 들어가기",
   waiting: "대기 중이에요",
   priority: "우선 참여하기",
 };
@@ -70,15 +71,15 @@ export default function RoomDetail() {
       detail.reload();
       return;
     }
-    // TODO: FE2 독서방 홈이 합쳐지면 아래 안내 대신 router.replace(roomHomeHref(room.id)) 로 방 안으로 이동
-    notify("독서방에 참여했어요!", "독서방 홈 화면은 FE2 작업이 합쳐지면 연결돼요.");
-    detail.reload();
+    // 참여하면 방 안(독서방 홈)으로 이동합니다. 뒤로가기로 미리보기에 돌아오지 않도록 replace
+    router.replace(roomHomeHref(room.id));
   };
 
   const handleJoin = () => {
     if (joinState === "private") setSheet("password");
     else if (joinState === "full") setSheet("waitlist");
     else if (joinState === "joinable" || joinState === "priority") join();
+    else if (joinState === "joined") router.replace(roomHomeHref(room.id));
   };
 
   const handleLeaveWaitlist = async () => {
@@ -93,7 +94,7 @@ export default function RoomDetail() {
         <Button
           size="large"
           loading={joining}
-          disabled={joinState === "joined" || joinState === "waiting"}
+          disabled={joinState === "waiting"}
           onPress={handleJoin}
         >
           {joinButtonLabel[joinState]}

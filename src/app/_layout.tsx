@@ -85,6 +85,8 @@ function RootNavigator() {
         <Stack.Screen name="books/[bookId]/rooms" options={{ title: "" }} />
         <Stack.Screen name="books/request" options={{ title: "" }} />
         <Stack.Screen name="books/request-result" options={{ title: "" }} />
+        {/* 독서방: rooms/[roomId] = 독서방 홈(FE2·FE3 탭), rooms/[roomId]/preview = 참여 전 상세(FE1) */}
+        <Stack.Screen name="rooms/[roomId]" options={{ title: "" }} />
         <Stack.Screen name="rooms/[roomId]/preview" options={{ title: "" }} />
         <Stack.Screen name="archive/index" options={{ title: "" }} />
         <Stack.Screen name="archive/[roomId]" options={{ title: "" }} />
