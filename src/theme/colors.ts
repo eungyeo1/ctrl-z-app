@@ -43,6 +43,19 @@ export const colors = {
   // 상태
   disabled: palette.neutral90, // 비활성 버튼 배경
   error: palette.red, // ⚠️ 임시
+
+  memoPaper: "#F5F2DB",
+  quoteHighlight: "rgba(235, 140, 149, 0.38)",
+  memoSummary: "#EEE9C9",
+  memoPaperBack: "#D6D6C2",
+  memoPaperFar: "#BABBAE",
+  memoAvatarBlue: "#AFD0D9",
+  memoAvatarRose: "#CE8D98",
+  memoAvatarSand: "#BFB49E",
+  memberAvatarOlive: "#D3D0B0",
+  memoLocked: "#9EA9A6",
+  memoLockedPlaceholder: "#8D9895",
+  shadow: palette.neutral10,
 } as const;
 
 export type ColorName = keyof typeof colors;
