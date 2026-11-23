@@ -2,6 +2,7 @@ import { Dropdown } from "@/components/ui";
 import { MemoComposer, type MemoDraft } from "@/features/memos/MemoComposer";
 import { colors, typography } from "@/theme";
 import { useRef, useState, type ComponentRef } from "react";
+import { Image } from "expo-image";
 import {
   Modal, Pressable, ScrollView, StyleSheet, Text, View,
 } from "react-native";
@@ -161,9 +162,13 @@ export function MemoFeed() {
               )}
               <View style={styles.card}>
                 {memo.related.length > 0 && (
-                  <View style={styles.clip}>
-                    <View style={styles.clipInner} />
-                  </View>
+                  <Image
+                    accessible={false}
+                    source={require("@/assets/images/memo-attach-file.png")}
+                    contentFit="contain"
+                    tintColor={colors.textSecondary}
+                    style={styles.clip}
+                  />
                 )}
                 <MemoText memo={memo} avatarColor={memo.id === 1 ? colors.memoAvatarBlue : colors.memoAvatarSand} />
                 {memo.spoiler && <Text style={styles.location}>스포일러가 포함된 메모</Text>}
@@ -193,7 +198,7 @@ export function MemoFeed() {
           <Text style={styles.location}>{detail.location} 근처 · 생각 {detail.related.length}개</Text>
           {detail.summary && (
             <View style={[styles.card, styles.summaryCard]}>
-              <Text style={styles.summaryTitle}>✳  AI 의견 요약</Text>
+              <Text style={styles.summaryTitle}>AI 의견 요약</Text>
               <Text style={styles.summaryBody}>{detail.summary}</Text>
               <Text style={styles.location}>{detail.related.length}개의 메모 기반</Text>
             </View>
@@ -271,15 +276,12 @@ const styles = StyleSheet.create({
     shadowRadius: 3, shadowOffset: { width: 0, height: 4 },
   },
   clip: {
-    position: "absolute", top: -13, right: 44, width: 17, height: 36,
-    borderWidth: 3, borderBottomLeftRadius: 8, borderBottomRightRadius: 8,
-    borderTopLeftRadius: 10, borderTopRightRadius: 10,
-    borderColor: colors.textSecondary, transform: [{ rotate: "30deg" }],
-    alignItems: "center", justifyContent: "flex-end",
-  },
-  clipInner: {
-    width: 8, height: 24, marginBottom: 2, borderWidth: 2, borderRadius: 5,
-    borderColor: colors.textSecondary,
+    position: "absolute",
+    top: -15,
+    right: 31,
+    width: 44,
+    height: 44,
+    transform: [{ rotate: "30deg" }],
   },
   byline: { flexDirection: "row", alignItems: "center", gap: 8 },
   avatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.memoAvatarBlue },
