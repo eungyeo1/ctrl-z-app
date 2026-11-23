@@ -52,6 +52,7 @@ export const colors = {
   memoAvatarBlue: "#AFD0D9",
   memoAvatarRose: "#CE8D98",
   memoAvatarSand: "#BFB49E",
+  memberAvatarOlive: "#D3D0B0",
   memoLocked: "#9EA9A6",
   memoLockedPlaceholder: "#8D9895",
   shadow: palette.neutral10,
