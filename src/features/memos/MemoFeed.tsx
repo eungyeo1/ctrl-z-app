@@ -251,7 +251,15 @@ export function MemoFeed() {
           <Text style={styles.location}>{detail.location} 근처 · 생각 {detail.related.length}개</Text>
           {detail.summary && (
             <View style={[styles.card, styles.summaryCard]}>
-              <Text style={styles.summaryTitle}>AI 의견 요약</Text>
+              <View style={styles.summaryHeading}>
+                <Image
+                  accessible={false}
+                  source={require("@/assets/images/memo-summary-north-star.png")}
+                  contentFit="contain"
+                  style={styles.summaryIcon}
+                />
+                <Text style={styles.summaryTitle}>AI 의견 요약</Text>
+              </View>
               <Text style={styles.summaryBody}>{detail.summary}</Text>
               <Text style={styles.location}>{detail.related.length}개의 메모 기반</Text>
             </View>
@@ -428,6 +436,8 @@ const styles = StyleSheet.create({
   clusterScroll: { gap: 20 },
   backToFeed: { minHeight: 44, justifyContent: "center", paddingHorizontal: 8 },
   summaryCard: { backgroundColor: colors.memoSummary },
+  summaryHeading: { flexDirection: "row", alignItems: "center", gap: 8 },
+  summaryIcon: { width: 16, height: 16 },
   summaryTitle: { ...typography.uiBaseSemiBold, color: colors.primary },
   summaryBody: { ...typography.uiBaseRegular, lineHeight: 23, color: colors.textPrimary },
 });
