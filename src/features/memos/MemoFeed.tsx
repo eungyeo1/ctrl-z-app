@@ -1,8 +1,9 @@
 import { Dropdown } from "@/components/ui";
 import { MemoComposer, type MemoDraft } from "@/features/memos/MemoComposer";
+import { MemoReport, type MemoReportDraft } from "@/features/memos/MemoReport";
 import { colors, typography } from "@/theme";
-import { useRef, useState, type ComponentRef } from "react";
 import { Image } from "expo-image";
+import { useRef, useState, type ComponentRef } from "react";
 import {
   Modal, Pressable, ScrollView, StyleSheet, Text, View,
 } from "react-native";
@@ -62,9 +63,11 @@ const sortOptions = [
   { label: "챕터순", value: "chapter" },
 ];
 
-function MemoText({ memo, avatarColor }: {
+function MemoText({ memo, avatarColor, onReport, reported }: {
   memo: RelatedMemo;
   avatarColor: string;
+  onReport?: () => void;
+  reported?: boolean;
 }) {
   return (
     <>
@@ -74,7 +77,20 @@ function MemoText({ memo, avatarColor }: {
           <Text style={styles.body}>{memo.author}</Text>
           <Text style={styles.location}>{memo.location}</Text>
         </View>
+        {onReport && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${memo.author} 님의 메모 신고하기`}
+            onPress={onReport}
+            style={styles.reportButton}
+          >
+            <View style={styles.chevron} />
+          </Pressable>
+        )}
       </View>
+      {reported && (
+        <Text accessibilityLiveRegion="polite" style={styles.location}>신고가 이 화면에 임시 저장됐어요.</Text>
+      )}
       {memo.quote && (
         <View style={styles.quoteRow}>
           <View style={styles.quoteRule} />
@@ -94,6 +110,8 @@ export function MemoFeed() {
   const [detail, setDetail] = useState<Memo | null>(null);
   const [revealTarget, setRevealTarget] = useState<Memo | null>(null);
   const [writing, setWriting] = useState(false);
+  const [reportTarget, setReportTarget] = useState<string>();
+  const [reports, setReports] = useState<Record<string, MemoReportDraft>>({});
   const feedScroll = useRef<ComponentRef<typeof ScrollView>>(null);
   const sortedMemos = [...memos].sort((a, b) => {
     if (sort === "latest") return b.id - a.id;
@@ -113,6 +131,12 @@ export function MemoFeed() {
     setSort("latest");
     setWriting(false);
     feedScroll.current?.scrollTo({ y: 0, animated: false });
+  }
+
+  function saveReport(draft: MemoReportDraft) {
+    if (reportTarget === undefined) return;
+    setReports((current) => ({ ...current, [reportTarget]: draft }));
+    setReportTarget(undefined);
   }
 
   return (
@@ -170,7 +194,12 @@ export function MemoFeed() {
                     style={styles.clip}
                   />
                 )}
-                <MemoText memo={memo} avatarColor={memo.id === 1 ? colors.memoAvatarBlue : colors.memoAvatarSand} />
+                <MemoText
+                  memo={memo}
+                  avatarColor={memo.id === 1 ? colors.memoAvatarBlue : colors.memoAvatarSand}
+                  onReport={memo.author !== "나" && !reports[`memo:${memo.id}`] ? () => setReportTarget(`memo:${memo.id}`) : undefined}
+                  reported={!!reports[`memo:${memo.id}`]}
+                />
                 {memo.spoiler && <Text style={styles.location}>스포일러가 포함된 메모</Text>}
                 {memo.related.length > 0 && (
                   <Pressable accessibilityRole="button" style={styles.related} onPress={() => setDetail(memo)}>
@@ -204,11 +233,19 @@ export function MemoFeed() {
             </View>
           )}
           <Text style={styles.location}>모아진 생각 {detail.related.length}개</Text>
-          {detail.related.map((memo, index) => (
-            <View key={memo.author} style={styles.card}>
-              <MemoText memo={memo} avatarColor={index === 0 ? colors.memoAvatarRose : colors.memoAvatarSand} />
-            </View>
-          ))}
+          {detail.related.map((memo, index) => {
+            const target = `cluster:${detail.id}:${index}`;
+            return (
+              <View key={target} style={styles.card}>
+                <MemoText
+                  memo={memo}
+                  avatarColor={index === 0 ? colors.memoAvatarRose : colors.memoAvatarSand}
+                  onReport={reports[target] ? undefined : () => setReportTarget(target)}
+                  reported={!!reports[target]}
+                />
+              </View>
+            );
+          })}
         </ScrollView>
       )}
       {!detail && <Pressable
@@ -221,6 +258,9 @@ export function MemoFeed() {
         <View style={styles.plusVertical} />
       </Pressable>}
       {writing && <MemoComposer onClose={() => setWriting(false)} onSave={saveDraft} />}
+      {reportTarget !== undefined && (
+        <MemoReport onClose={() => setReportTarget(undefined)} onSubmit={saveReport} />
+      )}
       <Modal
         transparent
         animationType="fade"
@@ -284,6 +324,7 @@ const styles = StyleSheet.create({
     transform: [{ rotate: "30deg" }],
   },
   byline: { flexDirection: "row", alignItems: "center", gap: 8 },
+  reportButton: { width: 44, minHeight: 44, marginRight: -10, alignItems: "center", justifyContent: "center" },
   avatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.memoAvatarBlue },
   authorText: { flex: 1 },
   location: { ...typography.xsmallRegular, color: colors.textSecondary },
