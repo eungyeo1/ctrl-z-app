@@ -1,6 +1,8 @@
 // S-31 약관 동의 (피그마 "약관 동의")
 // S-31-1 필수 약관(서비스 이용약관·개인정보 처리방침) / S-31-2 선택 약관(마케팅 정보 수신)
-// 다음 → 인증코드 발송(S-30-1) 후 이메일 인증 화면으로
+// 다음 →
+//   이메일 가입: 인증코드 발송(S-30-1) 후 이메일 인증 화면으로
+//   소셜 가입: 이메일이 있으면 바로 가입(실서버), 없으면 이메일 인증 화면에서 이메일부터 입력
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -10,7 +12,7 @@ import { StateView } from "@/components/layout/StateView";
 import { Button } from "@/components/ui";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { useAuth } from "@/features/auth/AuthContext";
-import { sendVerificationCode } from "@/services/api/auth";
+import { sendVerificationCode, signupSocial } from "@/services/api/auth";
 import { colors, radius, spacing, typography } from "@/theme";
 import type { SignupDraft } from "@/types/models";
 import { notify } from "@/utils/notify";
@@ -25,7 +27,7 @@ const items: { key: AgreementKey; label: string; required: boolean }[] = [
 
 export default function Terms() {
   const router = useRouter();
-  const { signupDraft, setSignupDraft } = useAuth();
+  const { signupDraft, setSignupDraft, signIn } = useAuth();
   const [agreements, setAgreements] = useState(
     signupDraft?.agreements ?? { terms: false, privacy: false, marketing: false },
   );
@@ -49,6 +51,25 @@ export default function Terms() {
   const toggle = (key: AgreementKey) => (next: boolean) => setAgreements((prev) => ({ ...prev, [key]: next }));
 
   const handleNext = async () => {
+    const draft = { ...signupDraft, agreements };
+
+    if (draft.method === "social") {
+      if (!draft.hasEmail) {
+        setSignupDraft(draft);
+        router.push("/verify-email");
+        return;
+      }
+      setLoading(true);
+      const res = await signupSocial(draft);
+      setLoading(false);
+      if (!res.success || !res.data) {
+        notify("가입하지 못했어요", res.error?.message);
+        return;
+      }
+      signIn(res.data.user, res.data.accessToken, { needsOnboarding: true });
+      return;
+    }
+
     setLoading(true);
     const res = await sendVerificationCode(signupDraft.email);
     setLoading(false);

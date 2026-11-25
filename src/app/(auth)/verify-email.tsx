@@ -1,8 +1,10 @@
 // S-30 이메일 인증 (피그마 시안 없음 — 약관 동의 화면 스타일로 구성)
-// S-30-1 인증코드 발송(약관 화면에서 이미 보냄) / S-30-2 6자리 코드 확인 / S-30-3 만료·실패 시 재발송
+// S-30-1 인증코드 발송 / S-30-2 6자리 코드 확인 / S-30-3 만료·실패 시 재발송
 // 인증에 성공하면 가입 완료 + 로그인 → 가드가 독서 취향 설정(S-03)으로 보냅니다.
 //
-// 목업 인증코드: 123456
+// 두 가지 경우에 들어와요.
+// 1) 이메일 가입: 약관 화면에서 이미 코드를 보냈고, 코드만 입력 (지금은 목업, 코드 123456)
+// 2) 소셜 가입 + 카카오에서 이메일을 못 받음: 이메일 입력 → 코드 받기 → 확인 → 소셜 가입 (실서버)
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -11,9 +13,17 @@ import { Screen } from "@/components/layout/Screen";
 import { StateView } from "@/components/layout/StateView";
 import { Button, TextField } from "@/components/ui";
 import { useAuth } from "@/features/auth/AuthContext";
-import { sendVerificationCode, verifyCodeAndSignUp } from "@/services/api/auth";
+import {
+  confirmVerificationCodeServer,
+  resendVerificationCodeServer,
+  sendVerificationCode,
+  sendVerificationCodeServer,
+  signupSocial,
+  verifyCodeAndSignUp,
+} from "@/services/api/auth";
 import { colors, spacing, typography } from "@/theme";
 import { notify } from "@/utils/notify";
+import { checkEmail } from "@/utils/validation";
 
 const CODE_LENGTH = 6;
 const DEFAULT_EXPIRES_SEC = 180;
@@ -23,6 +33,12 @@ const mmss = (sec: number) => `${Math.floor(sec / 60)}:${String(sec % 60).padSta
 export default function VerifyEmail() {
   const router = useRouter();
   const { signupDraft, signIn } = useAuth();
+  const isSocial = signupDraft?.method === "social";
+
+  const [email, setEmail] = useState(signupDraft?.email ?? "");
+  const [emailError, setEmailError] = useState<string>();
+  // 이메일 가입은 약관 화면에서 이미 코드를 보냈어요. 소셜은 이메일을 받은 뒤 보냅니다.
+  const [codeSent, setCodeSent] = useState(!isSocial);
   const [code, setCode] = useState("");
   const [errorText, setErrorText] = useState<string>();
   const [loading, setLoading] = useState(false);
@@ -31,10 +47,10 @@ export default function VerifyEmail() {
 
   // 남은 시간 카운트다운
   useEffect(() => {
-    if (secondsLeft <= 0) return;
+    if (!codeSent || secondsLeft <= 0) return;
     const timer = setTimeout(() => setSecondsLeft((prev) => prev - 1), 1000);
     return () => clearTimeout(timer);
-  }, [secondsLeft]);
+  }, [codeSent, secondsLeft]);
 
   if (!signupDraft) {
     return (
@@ -47,7 +63,26 @@ export default function VerifyEmail() {
     );
   }
 
-  const expired = secondsLeft <= 0;
+  const expired = codeSent && secondsLeft <= 0;
+  const targetEmail = email.trim().toLowerCase();
+
+  // 소셜: 이메일 입력 후 첫 발송
+  const handleSendFirst = async () => {
+    const problem = checkEmail(targetEmail);
+    if (problem) {
+      setEmailError(problem);
+      return;
+    }
+    setLoading(true);
+    const res = await sendVerificationCodeServer(targetEmail);
+    setLoading(false);
+    if (!res.success || !res.data) {
+      setEmailError(res.error?.message ?? "인증코드를 보내지 못했어요.");
+      return;
+    }
+    setSecondsLeft(res.data.expiresInSec);
+    setCodeSent(true);
+  };
 
   const handleVerify = async () => {
     if (expired) {
@@ -55,6 +90,25 @@ export default function VerifyEmail() {
       return;
     }
     setLoading(true);
+    if (isSocial) {
+      const confirmed = await confirmVerificationCodeServer(targetEmail, code);
+      if (!confirmed.success || !confirmed.data) {
+        setLoading(false);
+        setErrorText(confirmed.error?.message ?? "인증하지 못했어요.");
+        return;
+      }
+      const res = await signupSocial(signupDraft, {
+        email: targetEmail,
+        verificationToken: confirmed.data.verificationToken,
+      });
+      setLoading(false);
+      if (!res.success || !res.data) {
+        setErrorText(res.error?.message ?? "가입하지 못했어요.");
+        return;
+      }
+      signIn(res.data.user, res.data.accessToken, { needsOnboarding: true });
+      return;
+    }
     const res = await verifyCodeAndSignUp(signupDraft, code);
     setLoading(false);
     if (!res.success || !res.data) {
@@ -66,17 +120,57 @@ export default function VerifyEmail() {
 
   const handleResend = async () => {
     setResending(true);
-    const res = await sendVerificationCode(signupDraft.email);
+    const res = isSocial
+      ? await resendVerificationCodeServer(targetEmail)
+      : await sendVerificationCode(signupDraft.email);
     setResending(false);
-    if (!res.success || !res.data) {
+    if (!res.success) {
       notify("다시 보내지 못했어요", res.error?.message);
       return;
     }
     setCode("");
     setErrorText(undefined);
-    setSecondsLeft(res.data.expiresInSec);
-    notify("인증코드를 다시 보냈어요", signupDraft.email);
+    setSecondsLeft(DEFAULT_EXPIRES_SEC);
+    notify("인증코드를 다시 보냈어요", targetEmail);
   };
+
+  // 소셜 가입인데 아직 이메일을 안 받은 단계
+  if (!codeSent) {
+    return (
+      <Screen
+        edges={["bottom"]}
+        footer={
+          <Button size="large" disabled={!email.trim()} loading={loading} onPress={handleSendFirst}>
+            인증코드 받기
+          </Button>
+        }
+      >
+        <View style={styles.header}>
+          <Text style={styles.title}>이메일을 알려주세요</Text>
+          <Text style={styles.description}>
+            {signupDraft.provider === "kakao" ? "카카오" : "구글"} 계정에서 이메일을 받지 못했어요.{"\n"}
+            알림과 비밀번호 찾기에 쓸 이메일을 인증해 주세요.
+          </Text>
+        </View>
+        <TextField
+          label="이메일"
+          value={email}
+          onChangeText={(text) => {
+            setEmail(text);
+            setEmailError(undefined);
+          }}
+          placeholder="example@email.com"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoComplete="email"
+          autoCorrect={false}
+          returnKeyType="send"
+          onSubmitEditing={handleSendFirst}
+          errorText={emailError}
+        />
+      </Screen>
+    );
+  }
 
   return (
     <Screen
@@ -90,7 +184,7 @@ export default function VerifyEmail() {
       <View style={styles.header}>
         <Text style={styles.title}>메일로 받은{"\n"}인증코드를 입력해 주세요</Text>
         <Text style={styles.description}>
-          <Text style={styles.email}>{signupDraft.email}</Text>로 6자리 코드를 보냈어요.
+          <Text style={styles.email}>{targetEmail}</Text>로 6자리 코드를 보냈어요.
         </Text>
       </View>
 
@@ -121,7 +215,7 @@ export default function VerifyEmail() {
       </View>
 
       <Text style={styles.help}>메일이 오지 않았다면 스팸함을 확인하거나, 코드를 다시 받아 주세요.</Text>
-      {__DEV__ ? <Text style={styles.help}>개발용 목업 코드: 123456</Text> : null}
+      {__DEV__ && !isSocial ? <Text style={styles.help}>개발용 목업 코드: 123456</Text> : null}
     </Screen>
   );
 }

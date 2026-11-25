@@ -1,5 +1,6 @@
 // S-03 독서 취향 설정 (피그마 "독서 취향")
-// S-03-1 선호 장르·독서 목적 다중 선택 / S-03-2 건너뛰기
+// S-03-1 선호 장르(복수 선택) + 독서 목적(1개 선택) / S-03-2 건너뛰기
+// 서버가 장르 1개 이상, 목적 1개를 받아서 둘 다 골라야 시작할 수 있어요.
 // 완료하거나 건너뛰면 가드가 홈으로 보냅니다.
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -22,25 +23,26 @@ const toggleIn = (list: string[], value: string) =>
 export default function Preferences() {
   const { completeOnboarding } = useAuth();
   const [genres, setGenres] = useState<string[]>([]);
-  const [purposes, setPurposes] = useState<string[]>([]);
+  const [purpose, setPurpose] = useState<string>();
   const [loading, setLoading] = useState(false);
 
   const handleSave = async () => {
     setLoading(true);
-    const res = await savePreferences(genres, purposes);
+    if (!purpose) return;
+    const res = await savePreferences(genres, purpose);
     setLoading(false);
     if (!res.success) {
       notify("저장하지 못했어요", res.error?.message);
       return;
     }
-    completeOnboarding({ favoriteGenres: genres, readingPurposes: purposes });
+    completeOnboarding({ favoriteGenres: genres, readingPurposes: [purpose] });
   };
 
   return (
     <Screen
       edges={["top", "bottom"]}
       footer={
-        <Button size="large" disabled={genres.length === 0 && purposes.length === 0} loading={loading} onPress={handleSave}>
+        <Button size="large" disabled={genres.length === 0 || !purpose} loading={loading} onPress={handleSave}>
           시작하기
         </Button>
       }
@@ -74,14 +76,14 @@ export default function Preferences() {
       </View>
 
       <View style={styles.group}>
-        <Text style={styles.groupTitle}>독서 목적</Text>
+        <Text style={styles.groupTitle}>독서 목적(1개 선택)</Text>
         <View style={styles.chips}>
-          {PURPOSES.map((purpose) => (
+          {PURPOSES.map((item) => (
             <Chip
-              key={purpose}
-              label={purpose}
-              selected={purposes.includes(purpose)}
-              onPress={() => setPurposes((prev) => toggleIn(prev, purpose))}
+              key={item}
+              label={item}
+              selected={purpose === item}
+              onPress={() => setPurpose(item)}
             />
           ))}
         </View>

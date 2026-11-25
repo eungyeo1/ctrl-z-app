@@ -1,7 +1,8 @@
 // S-01 로그인 / 회원가입 (피그마 "온보딩")
 // S-01-1 이메일·비밀번호 입력 후 "이메일로 계속하기"
 //        → 가입된 이메일이면 로그인, 처음 보는 이메일이면 약관 동의(S-31)로 분기
-// S-01-2 카카오 / Apple 소셜 로그인 진입
+// S-01-2 카카오 / 구글 소셜 로그인 진입 (실서버 연동, 개발용 빌드에서만 동작)
+//        기존 회원이면 바로 로그인, 처음이면 약관 동의(S-31)로
 // 로그인에 성공하면 루트 레이아웃의 가드가 홈으로 보내줍니다. (router 이동 필요 없음)
 //
 // 목업 테스트 계정: test@ctrlz.com / password1!
@@ -13,9 +14,11 @@ import { Logo } from "@/components/layout/Logo";
 import { Screen } from "@/components/layout/Screen";
 import { Button, TextField } from "@/components/ui";
 import { useAuth } from "@/features/auth/AuthContext";
+import { getSocialToken } from "@/features/auth/socialSdk";
 import { checkEmail as checkEmailExists, login, socialLogin, type LoginResult } from "@/services/api/auth";
 import { colors, radius, spacing, typography } from "@/theme";
-import type { ApiResponse } from "@/types/models";
+import type { ApiResponse, SocialProvider } from "@/types/models";
+import { notify } from "@/utils/notify";
 import { checkEmail, checkPassword, PASSWORD_RULE_TEXT } from "@/utils/validation";
 
 export default function Login() {
@@ -44,6 +47,7 @@ export default function Login() {
     setPasswordError(passwordProblem);
     if (emailProblem || passwordProblem) return;
     setSignupDraft({
+      method: "email",
       email: email.trim().toLowerCase(),
       password,
       agreements: { terms: false, privacy: false, marketing: false },
@@ -80,11 +84,35 @@ export default function Login() {
     finishLogin(res);
   };
 
-  const handleSocial = async (provider: "kakao" | "apple") => {
+  const handleSocial = async (provider: SocialProvider) => {
     setLoading(true);
-    const res = await socialLogin(provider);
+    const sdk = await getSocialToken(provider);
+    if (sdk.status !== "success") {
+      setLoading(false);
+      if (sdk.status === "error") notify("로그인하지 못했어요", sdk.message);
+      return;
+    }
+    const res = await socialLogin(provider, sdk.token);
     setLoading(false);
-    finishLogin(res);
+    if (!res.success || !res.data) {
+      notify("로그인하지 못했어요", res.error?.message);
+      return;
+    }
+    if (!res.data.isNewUser) {
+      signIn(res.data.login.user, res.data.login.accessToken);
+      return;
+    }
+    // 처음 오는 소셜 계정 → 소셜 토큰을 들고 약관 동의로
+    setSignupDraft({
+      method: "social",
+      provider,
+      socialToken: sdk.token,
+      hasEmail: res.data.hasEmail,
+      email: "",
+      password: "",
+      agreements: { terms: false, privacy: false, marketing: false },
+    });
+    router.push("/terms");
   };
 
   return (
@@ -150,8 +178,8 @@ export default function Login() {
           <Button variant="secondary" size="large" disabled={loading} onPress={() => handleSocial("kakao")}>
             카카오로 계속하기
           </Button>
-          <Button variant="secondary" size="large" disabled={loading} onPress={() => handleSocial("apple")}>
-            Apple로 계속하기
+          <Button variant="secondary" size="large" disabled={loading} onPress={() => handleSocial("google")}>
+            구글로 계속하기
           </Button>
         </View>
 

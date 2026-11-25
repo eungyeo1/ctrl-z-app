@@ -25,10 +25,19 @@ export interface User {
   joinedAt: string; // YYYY-MM-DD
 }
 
+export type SocialProvider = "kakao" | "google";
+
 // 회원가입 진행 중 정보 (S-01 → S-31 → S-30 사이에 들고 다님)
+// - email: 이메일 가입. email·password 를 들고 약관 → 이메일 인증
+// - social: 소셜 첫 로그인. 서버가 is_new_user 를 주면 소셜 토큰을 들고 약관으로
+//           hasEmail 이 false 면(카카오에서 이메일을 못 받음) 이메일 인증을 한 번 더 거칩니다.
 export interface SignupDraft {
+  method: "email" | "social";
   email: string;
   password: string;
+  provider?: SocialProvider;
+  socialToken?: string;
+  hasEmail?: boolean;
   agreements: { terms: boolean; privacy: boolean; marketing: boolean };
 }
 
