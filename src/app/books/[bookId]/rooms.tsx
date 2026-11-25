@@ -1,15 +1,17 @@
 // S-08 해당 책 독서방 목록 (피그마 "독서방 홈": "{책 제목} · 독서방" + 전체/공개/비공개 탭)
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { Screen } from "@/components/layout/Screen";
 import { StateView } from "@/components/layout/StateView";
+import { SegmentedTabs } from "@/components/ui/SegmentedTabs";
 import { RoomListItem } from "@/features/rooms/RoomListItem";
+import { roomPreviewHref } from "@/features/rooms/routes";
 import { useApi } from "@/hooks/useApi";
 import { getBook } from "@/services/api/books";
 import { getRoomsByBook } from "@/services/api/rooms";
-import { colors, radius, spacing, typography } from "@/theme";
+import { colors, spacing, typography } from "@/theme";
 import type { Room, RoomVisibility } from "@/types/models";
 
 type Filter = "all" | RoomVisibility;
@@ -45,27 +47,14 @@ export default function BookRooms() {
     <Screen edges={["bottom"]}>
       <Text style={styles.title}>{book.data ? `${book.data.title} · 독서방` : " "}</Text>
 
-      {/* 세그먼트 탭: FE2 브랜치의 SegmentedControl 이 합쳐지면 그걸로 교체 */}
-      <View style={styles.segment} accessibilityRole="tablist">
-        {(Object.keys(filterLabels) as Filter[]).map((key) => {
-          const selected = key === filter;
-          const count = key === "all" ? ` ${allRooms.length}` : "";
-          return (
-            <Pressable
-              key={key}
-              accessibilityRole="tab"
-              accessibilityState={{ selected }}
-              onPress={() => setFilter(key)}
-              style={[styles.segmentItem, selected && styles.segmentItemSelected]}
-            >
-              <Text style={[styles.segmentText, selected && styles.segmentTextSelected]}>
-                {filterLabels[key]}
-                {count}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      <SegmentedTabs
+        value={filter}
+        onChange={setFilter}
+        options={(Object.keys(filterLabels) as Filter[]).map((key) => ({
+          value: key,
+          label: key === "all" ? `${filterLabels[key]} ${allRooms.length}` : filterLabels[key],
+        }))}
+      />
 
       {rooms.loading && !rooms.data ? (
         <StateView loading />
@@ -79,7 +68,7 @@ export default function BookRooms() {
             <RoomListItem
               key={room.id}
               room={room}
-              onPress={() => router.push({ pathname: "/rooms/[roomId]", params: { roomId: room.id } })}
+              onPress={() => router.push(roomPreviewHref(room.id))}
             />
           ))}
         </View>
@@ -92,28 +81,6 @@ const styles = StyleSheet.create({
   title: {
     ...typography.uiBaseSemiBold,
     color: colors.textPrimary,
-  },
-  segment: {
-    flexDirection: "row",
-    padding: spacing.xs,
-    borderRadius: radius.full,
-    backgroundColor: colors.textBackground,
-  },
-  segmentItem: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: spacing.sm,
-    borderRadius: radius.full,
-  },
-  segmentItemSelected: {
-    backgroundColor: colors.primary,
-  },
-  segmentText: {
-    ...typography.uiSmallSemiBold,
-    color: colors.textSecondary,
-  },
-  segmentTextSelected: {
-    color: colors.onPrimary,
   },
   list: {
     gap: spacing.xl,

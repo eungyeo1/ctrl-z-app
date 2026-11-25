@@ -15,11 +15,11 @@ import { BookCover } from "@/features/books/BookCover";
 import { SearchBar } from "@/features/books/SearchBar";
 import { MyRoomCard } from "@/features/rooms/MyRoomCard";
 import { RoomListItem } from "@/features/rooms/RoomListItem";
+import { roomHomeHref, roomPreviewHref } from "@/features/rooms/routes";
 import { useApi } from "@/hooks/useApi";
 import { getRecommendedBooks } from "@/services/api/books";
 import { getMyRooms, getRecommendedRooms } from "@/services/api/rooms";
 import { colors, spacing, typography } from "@/theme";
-import { notify } from "@/utils/notify";
 
 // 홈에서는 참여 중인 방을 2개까지만 보여주고 나머지는 "전체보기"로 봅니다.
 const MY_ROOM_PREVIEW = 2;
@@ -43,13 +43,11 @@ export default function Home() {
     }, [reloadMyRooms, reloadRooms]),
   );
 
-  const openRoom = (roomId: string) => router.push({ pathname: "/rooms/[roomId]", params: { roomId } });
   const nickname = user?.nickname;
 
   return (
     <Screen>
-      {/* TODO: S-51 알림센터 화면 생기면 연결 */}
-      <AppHeader onBellPress={() => notify("알림센터(S-51)는 준비 중이에요.")} />
+      <AppHeader />
 
       <View style={styles.greeting}>
         <Text style={styles.greetingSmall}>{nickname ? `${nickname} 님, 오늘도 한 페이지` : "오늘도 한 페이지"}</Text>
@@ -87,7 +85,7 @@ export default function Home() {
         ) : myRooms.data?.length ? (
           myRooms.data
             .slice(0, showAllRooms ? undefined : MY_ROOM_PREVIEW)
-            .map((item) => <MyRoomCard key={item.room.id} item={item} onPress={() => openRoom(item.room.id)} />)
+            .map((item) => <MyRoomCard key={item.room.id} item={item} onPress={() => router.push(roomHomeHref(item.room.id))} />)
         ) : (
           <StateView emptyMessage="아직 참여 중인 독서방이 없어요." />
         )}
@@ -125,7 +123,7 @@ export default function Home() {
           <StateView loading />
         ) : rooms.data?.length ? (
           rooms.data.map(({ room, book }) => (
-            <RoomListItem key={room.id} room={room} book={book} onPress={() => openRoom(room.id)} />
+            <RoomListItem key={room.id} room={room} book={book} onPress={() => router.push(roomPreviewHref(room.id))} />
           ))
         ) : (
           <StateView emptyMessage="모집 중인 독서방이 없어요." />
